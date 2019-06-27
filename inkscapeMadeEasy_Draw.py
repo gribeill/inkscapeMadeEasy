@@ -32,7 +32,7 @@ except NameError:
   useLatex=True
 else:
   useLatex=False
-  
+
 import inkex
 import math
 import simplestyle
@@ -40,7 +40,7 @@ import numpy as np
 from lxml.etree import tostring
 if useLatex:
   import textextLib.textext as textext
-  
+
 import sys
 import tempfile
 """
@@ -57,12 +57,12 @@ def displayMsg(msg):
 
     :returns: nothing
     :rtype: -
-    
-    .. note:: Identical function has been also defined inside inkscapeMadeEasy class   
-    
+
+    .. note:: Identical function has been also defined inside inkscapeMadeEasy class
+
     """
     sys.stderr.write(msg + '\n')
-    
+
 def Dump(obj, file='./dump_file.txt', mode='w'):
     """Function to easily output the result of ``str(obj)`` to a file
 
@@ -78,7 +78,7 @@ def Dump(obj, file='./dump_file.txt', mode='w'):
     :returns: nothing
     :rtype: -
 
-    .. note:: Identical function has been also defined inside inkscapeMadeEasy class   
+    .. note:: Identical function has been also defined inside inkscapeMadeEasy class
 
     **Example**
 
@@ -240,7 +240,7 @@ class color():
                     - alpha: string in ``AA`` format
         :rtype: list
 
-        .. note:: For more information on this widget, see <http://wiki.inkscape.org/wiki/index.php/INX_Parameters> 
+        .. note:: For more information on this widget, see <http://wiki.inkscape.org/wiki/index.php/INX_Parameters>
 
         .. Warning:: you probably don't need to use this function. Consider using the method ``color.parseColorPicker()``
 
@@ -251,7 +251,7 @@ class color():
           <param name="myColorPicker" type="color"></param>
 
         2- in your .py file, you must parse it as a string:
-          >>>   self.OptionParser.add_option("--myColorPicker", action="store", type="string", dest="myColorPickerVar", default='0') 
+          >>>   self.OptionParser.add_option("--myColorPicker", action="store", type="string", dest="myColorPickerVar", default='0')
 
         3- call this function to convert so.myColorPickerVar to two strings
                  - #RRGGBB   with RGB values in hex
@@ -268,12 +268,12 @@ class color():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
-        >>>     inkex.Effect.__init__(self) 
+        >>>     inkex.Effect.__init__(self)
         >>>     self.OptionParser.add_option("--myColorPicker", action="store", type="string", dest="myColorPickerVar", default='#000000')  # parses the input parameter
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     color,alpha = inkDraw.color.colorPickerToRGBalpha(self.options.myColorPickerVar)       # returns the string representing the selected color and alpha channel
 
@@ -288,7 +288,7 @@ class color():
     def parseColorPicker(stringColorOption, stringColorPicker):
         """ Function that converts the string returned by  the widgets 'color' and 'optiongroup' in the .inx file into 2 strings, one representing the color in format ``#RRGGBB`` and the other representing the alpha channel ``AA``
 
-        You must have in your .inx both 'optiongroup' and 'color' widgets as defined below. You don't have to have all the color options presented in the example. That is the most complete example, considering the default colors in color.defined method.   
+        You must have in your .inx both 'optiongroup' and 'color' widgets as defined below. You don't have to have all the color options presented in the example. That is the most complete example, considering the default colors in color.defined method.
 
 
         :param stringColorOption: string returned by 'optiongroup' widget
@@ -300,11 +300,11 @@ class color():
                     - alpha: string in ``AA`` format
         :rtype: list
 
-        .. note:: For more information on this widget, see <http://wiki.inkscape.org/wiki/index.php/INX_Parameters> 
+        .. note:: For more information on this widget, see <http://wiki.inkscape.org/wiki/index.php/INX_Parameters>
 
         **Example**
 
-        It works in the following manner: The user select in the optiongroup list the desired color. All pre defined colors are listed there. There is also a 'my default color' where you can set your preferred default color and a 'use color picker' to select from the color picker widget. Keep in mind that the selected color in this widget will be considered ONLY if 'use color picker' option is selected. 
+        It works in the following manner: The user select in the optiongroup list the desired color. All pre defined colors are listed there. There is also a 'my default color' where you can set your preferred default color and a 'use color picker' to select from the color picker widget. Keep in mind that the selected color in this widget will be considered ONLY if 'use color picker' option is selected.
 
         Let your .inx file contains a widget of type 'color' with the name 'myColorPicker' and another 'optiongroup' with the name 'myColorOption'::
 
@@ -337,13 +337,13 @@ class color():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
-        >>>     inkex.Effect.__init__(self) 
+        >>>     inkex.Effect.__init__(self)
         >>>     self.OptionParser.add_option("--myColorPicker", action="store", type="string", dest="myColorPickerVar", default='0')       # parses the input parameters
         >>>     self.OptionParser.add_option("--myColorOption", action="store", type="string", dest="myColorOptionVar", default='black')   # parses the input parameter
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     so = self.options
         >>>     [RGBstring,alpha] = inkDraw.color.parseColorPicker(so.myColorOptionVar,so.myColorPickerVar)
@@ -389,7 +389,7 @@ class marker():
         :param strokeColor: color in the format ``#RRGGBB`` (hexadecimal), or ``None`` for no color. Default: color.defined('black')
         :param fillColor: color in the format ``#RRGGBB`` (hexadecimal), or ``None`` for no color. Default: color.defined('black')
         :param lineWidth: line width of the marker. Default: 1.0
-        :param markerTransform: custom transform applied to marker's path. Default: ``None`` 
+        :param markerTransform: custom transform applied to marker's path. Default: ``None``
 
            the transform must follow 'transform' attribute format. See <https://www.w3.org/TR/SVG/coords.html#TransformAttribute> for further information
 
@@ -417,12 +417,12 @@ class marker():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     nameID='myMarker'
         >>>     markerPath='M 3,0 L 0,1 L 0,-1 z'   # defines a path forming an triangle with vertices (3,0) (0,1) (0,-1)
@@ -433,7 +433,7 @@ class marker():
         >>>     markerTransform=None
         >>>     markerID=inkDraw.marker.createMarker(self,nameID,markerPath,RenameMode,strokeColor,fillColor,width,markerTransform)
         >>>     myLineStyle = inkDraw.lineStyle.set(1.0, markerEnd=markerID,lineColor=inkDraw.color.defined('black'))  # see lineStyle class for further information on this function
-        >>> 
+        >>>
         >>>     #tries to make another marker with the same nameID, changing RenameMode
         >>>     strokeColor=inkDraw.color.defined('blue')
         >>>     RenameMode=0
@@ -516,7 +516,7 @@ class marker():
         :type RenameMode: int
         :type scale: float
         :type strokeColor: string
-        :type fillColor: string    
+        :type fillColor: string
 
         :returns: NameID of the new marker
         :rtype: string
@@ -526,12 +526,12 @@ class marker():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     myMarker=inkDraw.marker.createDotMarker(self,nameID='myDotMarkerA',RenameMode=1,scale=0.5,strokeColor=inkDraw.color.defined('red'),fillColor=None)
         >>>     myLineStyle = inkDraw.lineStyle.set(1.0, markerEnd=myMarker,lineColor=inkDraw.color.defined('black'))  # see lineStyle class for further information on this function
@@ -563,7 +563,7 @@ class marker():
         :type RenameMode: int
         :type scale: float
         :type strokeColor: string
-        :type fillColor: string    
+        :type fillColor: string
 
         :returns: NameID of the new marker
         :rtype: string
@@ -573,12 +573,12 @@ class marker():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     myMarker=inkDraw.marker.createCrossMarker(self,nameID='myDotMarkerA',RenameMode=1,scale=0.5,strokeColor=inkDraw.color.defined('red'),fillColor=None)
         >>>     myLineStyle = inkDraw.lineStyle.set(1.0, markerEnd=myMarker,lineColor=inkDraw.color.defined('black'))  # see lineStyle class for further information on this function
@@ -610,7 +610,7 @@ class marker():
         :type RenameMode: int
         :type scale: float
         :type strokeColor: string
-        :type fillColor: string    
+        :type fillColor: string
 
         :returns: a list of strings: [startArrowMarker,endArrowMarker]
                     - startArrowMarker: nameID of start marker
@@ -622,12 +622,12 @@ class marker():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     StartArrowMarker,EndArrowMarker=inkDraw.marker.createArrow1Marker(self,nameID='myArrow',RenameMode=1,scale=0.5,strokeColor=inkDraw.color.defined('red'),fillColor=None)
         >>>     myLineStyle = inkDraw.lineStyle.set(1.0, markerStart=StartArrowMarker,markerEnd=EndArrowMarker,lineColor='#000000')  # see lineStyle class for further information on this function
@@ -672,7 +672,7 @@ class marker():
         :type RenameMode: int
         :type scale: float
         :type strokeColor: string
-        :type fillColor: string    
+        :type fillColor: string
 
         :returns: a list of strings: [startInfMarker,endInfMarker]
                     - startInfMarker: nameID of start marker
@@ -684,12 +684,12 @@ class marker():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     startInfMarker,endInfMarker=inkDraw.marker.createInfLineMarker(self,nameID='myInfMarker',RenameMode=1,scale=1.0,strokeColor=None,fillColor='#00FF00')
         >>>     myLineStyle = inkDraw.lineStyle.set(1.0, markerStart=startInfMarker,markerEnd=endInfMarker,lineColor='#000000')  # see lineStyle class for further information on this function
@@ -753,7 +753,7 @@ class lineStyle():
         :param markerEnd: marker at the end node. Default: ``None``
         :param strokeDashArray: dashed line pattern definition. Default: ``None`` See <http://www.w3schools.com/svg/svg_stroking.asp> for further information
 
-        :type lineWidth: float     
+        :type lineWidth: float
         :type lineColor: string
         :type fillColor: string
         :type lineJoin: string
@@ -776,22 +776,22 @@ class lineStyle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
-        >>> 
+        >>>
         >>>     # creates a line style using a dot marker at its end node
         >>>     myMarker=inkDraw.marker.createDotMarker(self,nameID='myMarker',RenameMode=1,scale=0.5,strokeColor=color.defined('red'),fillColor=None)   # see marker class for further information on this function
         >>>     myLineStyle = inkDraw.lineStyle.set(lineWidth=1.0, markerEnd=myMarker,lineColor=inkDraw.color.defined('black'),fillColor=inkDraw.color('red'))
-        >>> 
+        >>>
         >>>     # creates a line style with dashed line (5 units dash , 10 units space
-        >>>     myDashedStyle = inkDraw.lineStyle.set(lineWidth=1.0,lineColor=inkDraw.color.defined('black'),fillColor=inkDraw.color,strokeDashArray='5,10') 
+        >>>     myDashedStyle = inkDraw.lineStyle.set(lineWidth=1.0,lineColor=inkDraw.color.defined('black'),fillColor=inkDraw.color,strokeDashArray='5,10')
         >>>     # creates a line style with a more complex pattern (5 units dash , 10 units space, 2 units dash, 3 units space
-        >>>     myDashedStyle = inkDraw.lineStyle.set(lineWidth=1.0,lineColor=inkDraw.color.defined('black'),fillColor=inkDraw.color,strokeDashArray='5,10,2,3') 
+        >>>     myDashedStyle = inkDraw.lineStyle.set(lineWidth=1.0,lineColor=inkDraw.color.defined('black'),fillColor=inkDraw.color,strokeDashArray='5,10,2,3')
         """
 
         if not fillColor:
@@ -831,7 +831,7 @@ class lineStyle():
         The only adjustable parameter is its width. The fixed parameters are: lineColor=black, fillColor=None, lineJoin='round', lineCap='round', no markers, no dash pattern
 
         :param lineWidth: line width. Default: 1.0
-        :type lineWidth: float     
+        :type lineWidth: float
 
         :returns: line definition following the provided specifications
         :rtype: string
@@ -841,15 +841,15 @@ class lineStyle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
-        >>> 
-        >>>     mySimpleStyle = inkDraw.lineStyle.setSimpleBlack(lineWidth=2.0) 
+        >>>
+        >>>     mySimpleStyle = inkDraw.lineStyle.setSimpleBlack(lineWidth=2.0)
 
         """
         return lineStyle.set(lineWidth)
@@ -879,7 +879,7 @@ class textStyle():
         :param letterSpacing: extra space between letters. Format: ``_px``. Default: ``0px``
         :param wordSpacing: extra space between words. Format: ``_px``. Default: ``0px``
 
-        :type fontSize: float     
+        :type fontSize: float
         :type justification: string
         :type textColor: string
         :type fontFamily: string
@@ -899,14 +899,14 @@ class textStyle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
-        >>> 
+        >>>
         >>>     myTextStyle=inkDraw.textStyle.set(fontSize=10, justification='left', textColor=color.defined('black'), fontFamily='Sans', fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px')
         """
 
@@ -947,7 +947,7 @@ class textStyle():
         :param fontSize: size of the font in px. Default: 10
         :param justification: text justification. ``left``, ``right``, ``center``. Default: ``left``
 
-        :type fontSize: float     
+        :type fontSize: float
         :type justification: string
 
         :returns: line definition following the provided specifications
@@ -958,15 +958,15 @@ class textStyle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
-        >>> 
-        >>>     mySimpleStyle = inkDraw.textStyle.setSimpleBlack(fontSize=20,justification='center') 
+        >>>
+        >>>     mySimpleStyle = inkDraw.textStyle.setSimpleBlack(fontSize=20,justification='center')
 
         """
         return textStyle.set(fontSize, justification)
@@ -982,7 +982,7 @@ class textStyle():
         :param justification: text justification. ``left``, ``right``, ``center``. Default: ``left``
         :param textColor: color in the format ``#RRGGBB`` (hexadecimal), or ``None`` for no color. Default: color.defined('black')
 
-        :type fontSize: float     
+        :type fontSize: float
         :type justification: string
         :type textColor: string
 
@@ -994,15 +994,15 @@ class textStyle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
-        >>> 
-        >>>     mySimpleStyle = inkDraw.textStyle.setSimpleColor(fontSize=20,justification='center',textColor=inkDraw.color.gray(0.5)) 
+        >>>
+        >>>     mySimpleStyle = inkDraw.textStyle.setSimpleColor(fontSize=20,justification='center',textColor=inkDraw.color.gray(0.5))
         """
         return textStyle.set(fontSize, justification, textColor)
 
@@ -1012,9 +1012,9 @@ class text():
 
 
     This class contains only static methods so that you don't have to inherit this in your class
-    
+
     .. note:: LaTeX support is an optional feature, **enabled by default**. Please refer to :ref:`latexSupport` on how to disable it.
-    
+
     """
     @staticmethod
     def write(ExtensionBaseObj, text, coords, parent, textStyle=textStyle.setSimpleBlack(fontSize=10, justification='left'), fontSize=None, justification=None, angleDeg=0.0):
@@ -1050,22 +1050,22 @@ class text():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     mySimpleStyle = inkDraw.textStyle.setSimpleBlack(fontSize=20,justification='center')  # creates a simple text style.
-        >>>     
+        >>>
         >>>     #adds a two-line text, at the point x=5.0,y=6.0
         >>>     #               L1: 'foo bar who-hoo!'
         >>>     #               L2: 'second line!'
         >>>     myText='foo bar who-hoo!\\ntwo lines!'
         >>>     inkDraw.text.write(self, text=myText, coords=[5.0,6.0], parent=root_layer, textStyle=mySimpleStyle, fontSize=None, justification=None, angleDeg=0.0)
-        >>> 
+        >>>
         >>>     # creates a group in root-layer and add text to it
         >>>     myGroup = self.createGroup(parent=root_layer,'textGroup')
         >>>     #adds a text 'foo bar', rotated 45 degrees, at the point x=0,y=0, overriding justification of mySimpleStyle
@@ -1102,11 +1102,11 @@ class text():
                            'y': str(coords[1])}
 
         textLines=text.split('\\n')
-        
+
         for n in range(len(textLines)):
           myTspan = inkex.etree.SubElement(textObj, inkex.addNS('tspan', 'svg'), AttribsLineText)
-          myTspan.text = textLines[n].decode('utf-8')   
-          
+          myTspan.text = textLines[n].decode('utf-8')
+
         if angleDeg != 0:
             ExtensionBaseObj.rotateElement(textObj, center=coords, angleDeg=angleDeg)  # negative angle bc inkscape is upside down
 
@@ -1118,14 +1118,14 @@ class text():
         """Draws a text line using LaTeX. You can use any LaTeX contents here.
 
         .. note:: Employs the excellent 'textext' extension from Pauli Virtanen's <https://pav.iki.fi/software/textext/> is incorporated here. Please refer to `Main Features`_ section for further instructions
-        
+
         .. note:: LaTeX support is an optional feature that requires a few extra packages to be installed outside inkscape. **It is enabled by default**. Please refer to :ref:`latexSupport` on how to disable it. If disabled, this function will still work, internally calling the method text.write().
 
         :param ExtensionBaseObj: Most of the times you have to use 'self' from inkscapeMadeEasy related objects
-        :param parent: parent object        
+        :param parent: parent object
         :param LaTeXtext: text to be drawn. Can contain any latex command
-        :param position: position of the reference point [x,y]  
-        :param fontSize: size of the font. Assume any text of ``\\normalsize`` will have this size. Default: 10 
+        :param position: position of the reference point [x,y]
+        :param fontSize: size of the font. Assume any text of ``\\normalsize`` will have this size. Default: 10
         :param refPoint: text reference Point. See figure below for options. Default: ``cc``
         :param textColor: color in the format ``#RRGGBB`` (hexadecimal), or ``None`` for no color. Default: color.defined('black')
         :param LatexCommands: commands to be included before LaTeXtext (default: ' '). If LaTeX support is disabled, this parameter has no effect.
@@ -1133,9 +1133,9 @@ class text():
         :param preambleFile: optional preamble file to be included. Default: None. If LaTeX support is disabled, this parameter has no effect.
 
         :type ExtensionBaseObj: inkscapeMadeEasy object (see example below)
-        :type parent: element object 
+        :type parent: element object
         :type LaTeXtext: string
-        :type position: list  
+        :type position: list
         :type fontSize: float
         :type refPoint: string
         :type textColor: string
@@ -1164,7 +1164,7 @@ class text():
 
         You will need these packages installed. This file can be modified to include extra default packages and/or commands.
 
-        **LaTeX .tex document structure**      
+        **LaTeX .tex document structure**
 
         LaTeX .tex document have the following structure. Note that LatexCommands lies within document environment::
 
@@ -1189,12 +1189,12 @@ class text():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     customCommand = r'\\newcommand{\\fooBar}{\\textbf{Foo Bar Function! WhooHoo!}}'   # do not forget the r to avoid backslash escape.
@@ -1207,10 +1207,10 @@ class text():
             return 0
 
         tempDir=tempfile.gettempdir()
-        tempFilePath = tempDir + '/temp_svg_inkscapeMadeEasy_Draw.txt'   
-        
+        tempFilePath = tempDir + '/temp_svg_inkscapeMadeEasy_Draw.txt'
+
         if useLatex:  # set useLatex=False to replace latex by an standard text (much faster for debugging =)  )
-          
+
             Dump(r'<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- Created with Inkscape (http://www.inkscape.org/) --><svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="744.09448819" height="1052.3622047" id="svg19803" version="1.1" inkscape:version="0.48.3.1 r9886" sodipodi:docname="New document 45"> <defs id="defs19805" /> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="0.35" inkscape:cx="375" inkscape:cy="520" inkscape:document-units="px" inkscape:current-layer="layer1" showgrid="false" inkscape:window-width="500" inkscape:window-height="445" inkscape:window-x="932" inkscape:window-y="0" inkscape:window-maximized="0" /> <metadata id="metadata19808"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" /></svg>',tempFilePath, 'w')
 
             # temp instance for determining font height. Draws a F letter just to find the height of the font
@@ -1224,7 +1224,7 @@ class text():
             Height0 = 6.76  # running the code above, we get a 'F' with height of 6.76, with scale 1.0 from textext. This will be used to scale the text accordingly to fit user specification 'fontSize'
 
             scale = fontSize / Height0
-        
+
             tex = textext.TexText()  # start textText (awesome extension! =] )
             if preambleFile:
                 tex.affect([r'--text=' + LatexCommands + LaTeXtext, '--scale-factor=1', '--preamble-file=' + preambleFile, tempFilePath], output=False)
@@ -1251,13 +1251,13 @@ class text():
 
             if refPoint[1] == 'r':
                 justification='right'
-            
+
             mytextStyle = textStyle.setSimpleColor(fontSize=fontSize/0.76, justification='left', textColor=textColor)
             groupLatex = text.write(ExtensionBaseObj, LaTeXtext, [0, 0], parent,textStyle=mytextStyle, fontSize=fontSize/0.76,justification=justification, angleDeg=0.0) # attention! keep angleDeg=0.0 here bc it will be rotated below
 
 
         BboxMin, BboxMax = ExtensionBaseObj.getBoundingBox(groupLatex)
-        
+
         if useLatex:  # set useLatex=False to replace latex by an standard text (much faster for debugging =)  )
             if refPoint[0] == 't':
                 refPointY = BboxMin[1]     # BboxMin bc inkscape is upside down
@@ -1331,17 +1331,17 @@ class line():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle = set(lineWidth=1.0, lineColor=color.defined('red'))
-        >>>     
-        >>> 
+        >>>
+        >>>
         >>>     # creates a polyline passing by points (0,0) (0,1) (1,1) (1,2) (2,2) using absolute coordinates
         >>>     coords=[ [0,0], [0,1], [1,1], [1,2], [2,2] ]
         >>>     inkDraw.line.absCoords(root_layer, coordsList=coords, offset=[0, 0], label='fooBarLine', lineStyle=myLineStyle)
@@ -1393,17 +1393,17 @@ class line():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle = setSimpleBlack(lineWidth=1.0)
-        >>>     
-        >>> 
+        >>>
+        >>>
         >>>     # creates a polyline passing by points (0,0) (0,1) (1,1) (1,2) (2,2) using relative coordinates
         >>>     coords=[ [0,1], [1,0], [0,1], [1,0] ]
         >>>     inkDraw.line.relCoords(root_layer, coordsList=coords, offset=[0, 0], label='fooBarLine', lineStyle=myLineStyle)
@@ -1479,26 +1479,26 @@ class arc():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
-        >>> 
+        >>>
         >>>     P1=[10.0,0.0]
         >>>     P2=[20.0,10.0]
         >>>     R=15.0
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
-        >>>     
+        >>>
         >>>     #draws an opened arc
         >>>     inkDraw.arc.startEndRadius(parent=root_layer, Pstart=P1, Pend=P2, radius=R, offset=[25,0], label='arc1',  lineStyle=myLineStyle, flagOpen=True)
-        >>> 
+        >>>
         >>>     #draws a closed arc
         >>>     inkDraw.arc.startEndRadius(parent=root_layer, Pstart=P1, Pend=P2, radius=R, offset=[25,20], label='arc2',  lineStyle=myLineStyle, flagOpen=False)
-        >>>     
+        >>>
         >>>     #draws arcs with all combinations of flagRightOf and largeArc parameters
         >>>     inkDraw.arc.startEndRadius(parent=root_layer, Pstart=P1, Pend=P2, radius=R, offset=[0,0], label='arc',  lineStyle=myLineStyle, flagRightOf=True, largeArc=True)
         >>>     inkDraw.arc.startEndRadius(parent=root_layer, Pstart=P1, Pend=P2, radius=R, offset=[25,0], label='arc4',  lineStyle=myLineStyle, flagRightOf=False, largeArc=True)
@@ -1613,16 +1613,16 @@ class arc():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
-        >>>     
+        >>>
         >>>     #draws the shortest arc
         >>>     inkDraw.arc.centerAngStartAngEnd(parent=root_layer, centerPoint=[0,0], radius=15.0, angStart=-10, angEnd=90, offset=[0,0], label='arc1',  lineStyle=myLineStyle, flagOpen=True,largeArc=False)
         >>>     #draws the longest arc
@@ -1675,16 +1675,16 @@ class circle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
-        >>>     
+        >>>
         >>>     #draws the shortest arc
         >>>     inkDraw.circle.centerRadius(parent=root_layer, centerPoint=[0,0], radius=15.0, offset=[5,1], label='circle1',  lineStyle=myLineStyle)
         """
@@ -1746,22 +1746,22 @@ class rectangle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
-        >>>     
+        >>>
         >>>     #draws a 50x60 rectangle with radiusX=2.0 and radiusY=3.0
         >>>     inkDraw.rectangle.widthHeightCenter(parent=root_layer, centerPoint=[0,0], width=50, height=60, radiusX=2.0,radiusY=3.0, offset=[0,0], label='rect1',  lineStyle=myLineStyle)
         """
         x= centerPoint[0]-width/2.0 + offset[0]
         y= centerPoint[1]-height/2.0 + offset[1]
-        
+
         Attribs = {inkex.addNS('label', 'inkscape'): label,
                       'style': simplestyle.formatStyle(lineStyle),
                       'width': str(width),
@@ -1770,7 +1770,7 @@ class rectangle():
                       'y': str(y),
                       'rx': str(radiusX),
                       'ry': str(radiusY)}
-        
+
         if radiusX and radiusX>0.0:
           Attribs['rx'] = str(radiusX)
           if radiusY == None:
@@ -1813,27 +1813,27 @@ class rectangle():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
-        >>>     
+        >>>
         >>>     #draws a rectangle with corners C1=[1,5] and C2=[6,10], with radiusX=2.0 and radiusY=3.0
         >>>     inkDraw.rectangle.corners(parent=root_layer, corner1=[1,5], corner2=[6,10], radiusX=2.0,radiusY=3.0, offset=[0,0], label='rect1',  lineStyle=myLineStyle)
         """
         x= (corner1[0]+corner2[0])/2.0
         y= (corner1[1]+corner2[1])/2.0
-        
+
         width = abs(corner1[0]-corner2[0])
         height = abs(corner1[1]-corner2[1])
 
-        return rectangle.widthHeightCenter(parent, [x,y], width, height, radiusX, radiusY, offset, label, lineStyle)    
-     
+        return rectangle.widthHeightCenter(parent, [x,y], width, height, radiusX, radiusY, offset, label, lineStyle)
+
 class ellipse():
     """ This is a class with different methods for drawing ellipses.
 
@@ -1869,20 +1869,19 @@ class ellipse():
         >>> import inkex
         >>> import inkscapeMadeEasy_Base as inkBase
         >>> import inkscapeMadeEasy_Draw as inkDraw
-        >>> 
+        >>>
         >>> class myExtension(inkBase.inkscapeMadeEasy):
         >>>   def __init__(self):
         >>>     ...
         >>>     ...
-        >>> 
+        >>>
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
-        >>>     
+        >>>
         >>>     #draws the shortest arc
         >>>     inkDraw.ellipse.centerRadius(parent=root_layer, centerPoint=[0,0], radiusX=15.0, radiusY=25.0, offset=[5,1], label='circle1',  lineStyle=myLineStyle)
         """
-
         # arc instructions
         arcStringA = ' a %f,%f 0 1 1 %f,%f' % (radiusX, radiusY, -2 * radiusX, 0)
         arcStringB = ' a %f,%f 0 1 1 %f,%f' % (radiusX, radiusY, 2 * radiusX, 0)
@@ -1898,5 +1897,46 @@ class ellipse():
                    inkex.addNS('end', 'sodipodi'): str(2 * math.pi),
                    # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
                    'd': 'M ' + str(centerPoint[0] + offset[0] + radiusX) + ' ' + str(centerPoint[1] + offset[1]) + arcStringA + ' ' + arcStringB + ' z'}
+
+        return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
+
+    @staticmethod
+    def centerStartEndAngles(parent, centerPoint, radiusX, radiusY, angStart=0.0,
+            angEnd = 90, offset=[0, 0], label='circle', lineStyle=lineStyle.setSimpleBlack(), largeArc=False):
+
+        p0 = np.array([centerPoint[0] + offset[0], centerPoint[1] + offset[1]])
+
+        pstart = np.array([radiusX * math.cos(math.radians(angStart)), radiusY * math.sin(math.radians(angStart))])
+        pend   = np.array([radiusX * math.cos(math.radians(angEnd)), radiusY * math.sin(math.radians(angEnd))])
+
+        if abs(angEnd - angStart) <= 180:
+            flagRight = largeArc
+        else:
+            flagRight = not largeArc
+
+        if flagRight:   # inkscape does not follow svg path format to create arcs. It uses sodipodi which is weird  =S
+            sodipodiAngleStart = str(math.radians(angEnd))
+            sodipodiAngleEnd = str(math.radians(angStart))
+        else:
+            sodipodiAngleStart = str(math.radians(angStart))
+            sodipodiAngleEnd = str(math.radians(angEnd))
+
+        pstart = pstart + p0
+        pend = pend + p0
+
+        arcString = ' a %f,%f 0 %d %d %f,%f' % (radiusX, radiusY, int(largeArc), int(flagRight), pend[0] - pstart[0], pend[1] - pstart[1])
+
+        Attribs = {inkex.addNS('label', 'inkscape'): label,
+                   'style': simplestyle.formatStyle(lineStyle),
+                   inkex.addNS('type', 'sodipodi'): 'arc',
+                   inkex.addNS('rx', 'sodipodi'): str(radiusX),
+                   inkex.addNS('ry', 'sodipodi'): str(radiusY),
+                   inkex.addNS('cx', 'sodipodi'): str(p0[0]),
+                   inkex.addNS('cy', 'sodipodi'): str(p0[1]),
+                   inkex.addNS('start', 'sodipodi'): sodipodiAngleStart,
+                   inkex.addNS('end', 'sodipodi'): sodipodiAngleEnd,
+                   inkex.addNS('open', 'sodipodi'): 'true',
+                   # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
+                   'd': 'M ' + str(pstart[0]) + ' ' + str(pstart[1]) + arcString}
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
