@@ -1900,3 +1900,44 @@ class ellipse():
                    'd': 'M ' + str(centerPoint[0] + offset[0] + radiusX) + ' ' + str(centerPoint[1] + offset[1]) + arcStringA + ' ' + arcStringB + ' z'}
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
+
+    @staticmethod
+    def centerStartEndAngles(parent, centerPoint, radiusX, radiusY, angStart=0.0,
+            angEnd = 90, offset=[0, 0], label='circle', lineStyle=lineStyle.setSimpleBlack(), largeArc=False):
+
+        p0 = np.array([centerPoint[0] + offset[0], centerPoint[1] + offset[1]])
+
+        pstart = np.array([radiusX * math.cos(math.radians(angStart)), radiusY * math.sin(math.radians(angStart))])
+        pend   = np.array([radiusX * math.cos(math.radians(angEnd)), radiusY * math.sin(math.radians(angEnd))])
+
+        if abs(angEnd - angStart) <= 180:
+            flagRight = largeArc
+        else:
+            flagRight = not largeArc
+
+        if flagRight:   # inkscape does not follow svg path format to create arcs. It uses sodipodi which is weird  =S
+            sodipodiAngleStart = str(math.radians(angEnd))
+            sodipodiAngleEnd = str(math.radians(angStart))
+        else:
+            sodipodiAngleStart = str(math.radians(angStart))
+            sodipodiAngleEnd = str(math.radians(angEnd))
+
+        pstart = pstart + p0
+        pend = pend + p0
+
+        arcString = ' a %f,%f 0 %d %d %f,%f' % (radiusX, radiusY, int(largeArc), int(flagRight), pend[0] - pstart[0], pend[1] - pstart[1])
+
+        Attribs = {inkex.addNS('label', 'inkscape'): label,
+                   'style': simplestyle.formatStyle(lineStyle),
+                   inkex.addNS('type', 'sodipodi'): 'arc',
+                   inkex.addNS('rx', 'sodipodi'): str(radiusX),
+                   inkex.addNS('ry', 'sodipodi'): str(radiusY),
+                   inkex.addNS('cx', 'sodipodi'): str(p0[0]),
+                   inkex.addNS('cy', 'sodipodi'): str(p0[1]),
+                   inkex.addNS('start', 'sodipodi'): sodipodiAngleStart,
+                   inkex.addNS('end', 'sodipodi'): sodipodiAngleEnd,
+                   inkex.addNS('open', 'sodipodi'): 'true',
+                   # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
+                   'd': 'M ' + str(pstart[0]) + ' ' + str(pstart[1]) + arcString}
+
+        return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
