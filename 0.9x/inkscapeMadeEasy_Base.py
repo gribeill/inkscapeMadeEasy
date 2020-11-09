@@ -22,13 +22,14 @@
 #
 # -----------------------------------------------------------------------------
 
-import inkex
-import re
-from lxml.etree import tostring
-import numpy as np
-import os
-import sys
 import math
+import os
+import re
+import sys
+from copy import deepcopy
+
+import numpy as np
+import inkex
 
 """
 Base helper module that extends Aaron Spike's inkex.py module, adding basic manipulation functions
@@ -37,38 +38,38 @@ This module requires the following modules: inkex, re, lxml, numpy and os.
 """
 
 
-#---------------------------------------------
+# ---------------------------------------------
 class inkscapeMadeEasy(inkex.Effect):
     """
     Base class for extensions.
 
-    This class extends the inkex.Effect class by adding several basic functions to help manipulating inkscape elements. All extensions should inherit this class.
+    This class extends the inkex.Effect class by adding several basic functions to help
+    manipulating inkscape elements. All extensions should inherit this class.
 
     """
 
     def __init__(self):
         inkex.Effect.__init__(self)
-        self.inkscapeResolution_dpi=96.0  # number of pixels per inch
-        
-        resolution_in=self.inkscapeResolution_dpi
-        resolution_mm=self.inkscapeResolution_dpi/25.4
-        
-        self.unitsDict = {'mm': resolution_mm,           # 25.4mm per inch
-                         'cm': resolution_mm*10.0,       # 1cm = 10mm
-                          'm': resolution_mm*1.0e3,      # 1m = 1000mm 
-                         'km': resolution_mm*1.0e6,      # 1km = 1e6mm
-                         'in': resolution_in,            # 1in = 96px
-                         'ft': resolution_in*12.0,       # foot = 12*in
-                         'yd': resolution_in*12.0*3.0,   # yard = 3*ft
-                         'pt': resolution_in/72.0,       # point 1pt = 1/72th of an inch
-                         'px': 1.0,
-                         'pc': resolution_in/6.0}        # picas	1pc = 1/6th of and inch
-    
+        self.inkscapeResolution_dpi = 96.0  # number of pixels per inch
+
+        resolution_in = self.inkscapeResolution_dpi
+        resolution_mm = self.inkscapeResolution_dpi / 25.4
+
+        self.unitsDict = {'mm': resolution_mm,  # 25.4mm per inch
+                          'cm': resolution_mm * 10.0,  # 1cm = 10mm
+                          'm': resolution_mm * 1.0e3,  # 1m = 1000mm
+                          'km': resolution_mm * 1.0e6,  # 1km = 1e6mm
+                          'in': resolution_in,  # 1in = 96px
+                          'ft': resolution_in * 12.0,  # foot = 12*in
+                          'yd': resolution_in * 12.0 * 3.0,  # yard = 3*ft
+                          'pt': resolution_in / 72.0,  # point 1pt = 1/72th of an inch
+                          'px': 1.0, 'pc': resolution_in / 6.0}  # picas	1pc = 1/6th of and inch
+
     # coordinates o the origin of the grid. unfortunately the grid does not fit
     # x0=0
     # y0=-7.637817382813
-    
-    def displayMsg(self,msg):
+
+    def displayMsg(self, msg):
         """Displays a message to the user.
 
         :param msg: message
@@ -101,14 +102,16 @@ class inkscapeMadeEasy(inkex.Effect):
     def Dump(self, obj, file='./dump_file.txt', mode='w'):
         """Function to easily output the result of ``str(obj)`` to a file
 
-        This function was created to help debugging the code while it is running under inkscape. Since inkscape does not possess a terminal as today (2016), this function overcomes partially the issue of sending things to stdout by dumping result of the function ``str()`` in a text file.
+        This function was created to help debugging the code while it is running under inkscape.
+        Since inkscape does not possess a terminal as today (2016), this function overcomes partially the
+        issue of sending things to stdout by dumping result of the function ``str()`` in a text file.
 
 
         :param obj: object to sent to a file. Any type that can be used in ``str()``
         :param file: file path. Default: ``./dump_file.txt``
         :param mode: writing mode of the file Default: ``w`` (write)
         :type obj: any, as long as ``str(obj)`` is implemented (see ``__str__()`` metaclass definition )
-        :type arg2: string
+        :type file: string
         :type mode: string
         :returns:  nothing
         :rtype: -
@@ -118,9 +121,9 @@ class inkscapeMadeEasy(inkex.Effect):
         >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy 
         >>> x=inkscapeMadeEasy
         >>> vector1=[1,2,3,4,5,6]
-        >>> x.Dump(vector,file='~/temporary.txt',mode='w')   % writes the list to a file
+        >>> x.Dump(vector1,file='~/temporary.txt',mode='w')   # writes the list to a file
         >>> vector2=[7,8,9,10]
-        >>> x.Dump(vector2,file='~/temporary.txt',mode='a')   % append the list to a file
+        >>> x.Dump(vector2,file='~/temporary.txt',mode='a')   # append the list to a file
 
 
         """
@@ -128,8 +131,9 @@ class inkscapeMadeEasy(inkex.Effect):
         file.write(str(obj) + '\n')
         file.close()
 
-    def removeElement(self,element):
-        """Function to remove one element or group. If the parent of the element is a group and has no other children, then the parent is also removed.
+    def removeElement(self, element):
+        """Function to remove one element or group. If the parent of the element is a group
+        and has no other children, then the parent is also removed.
 
         :param element: element object
         :type element: element object
@@ -149,24 +153,113 @@ class inkscapeMadeEasy(inkex.Effect):
         >>> groupB = self.createGroup(rootLayer,label='temp1')                # creates a group inside rootLayer
         >>> line4 = inkscapeMadeEasy_Draw.line.relCoords(groupB, [[5,0]],[0,0])       # creates a line in groupB
         >>> self.removeElement(groupB)                              # removes group B and all its children
-   
+
         """
-        
-        parent = element.getparent() 
-          
+
+        parent = element.getparent()
+
         parent.remove(element)
-        
-        if parent.tag == 'g'and len(parent.getchildren())==0:  # if object's parent is a group and has no other children, remove parent as well
-          #self.Dump(len(parent.getchildren()),'/home/fernando/lixo.txt','w')
-          parent.getparent().remove(parent)
-          
-          
-    def uniqueIdNumber(prefix_id):
+
+        if parent.tag == 'g' and len(parent.getchildren()) == 0:  # if object's parent is a group and has no other children, remove parent as well
+            temp = parent.getparent()
+            if temp is not None:
+                temp.remove(parent)
+
+    def importSVG(self, parent, fileIn, createGroup=True):
+        """ Import SVG file into the current document
+
+        :param parent: parent element where all contents will be placed
+        :param fileIn: SVG file path
+        :param createGroup: create a group containing all imported elements. (Default: True)
+        :type parent: element object
+        :type fileIn: string
+        :type createGroup: bool
+        :returns:  imported element objects. If createGroup==True, returns the group. Otherwise returns a list with all imported elements
+        :rtype: element object or list of objects
+
+        **Example**
+
+        >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy
+        >>> import inkscapeMadeEasy_Draw as inkDraw
+        >>> x=inkscapeMadeEasy
+        >>> rootLayer = x.document.getroot()                             # retrieves the root layer of the file
+        >>> imported1 = self.importSVG(rootLayer,'/path/to/file1.svg',True) # import contents of the file and group them. imported1 is the group element
+        >>> imported2 = self.importSVG(rootLayer,'/path/to/file2.svg',False) # import contents of the file. imported2 is a list of the imported elements
+
+        """
+        documentIn = inkex.etree.parse(fileIn, parser=inkex.etree.XMLParser(huge_tree=True)).getroot()
+
+        if createGroup:
+            group = self.createGroup(parent, label='importedSVG')
+            for elem in documentIn:
+                if elem.tag != inkex.addNS('namedview', 'sodipodi') and elem.tag != inkex.addNS('metadata', 'svg'):
+                    group.append(elem)
+            self.unifyDefs()
+            return group
+        else:
+            listElements=[]
+            for elem in documentIn:
+                if elem.tag != inkex.addNS('namedview', 'sodipodi') and elem.tag != inkex.addNS('metadata', 'svg'):
+                    parent.append(elem)
+                    if elem.tag != inkex.addNS('defs', 'svg'):
+                        listElements.append(elem)
+            self.unifyDefs()
+            return listElements
+
+    def exportSVG(self, element, fileOut):
+        """ Export the elements in a new svgfile
+
+        This function will export the element in a new SVG file. If a list of elements is passed as argument. All elements in the list will be exported to the same file.
+
+        :param element: element or list of elements to be exported
+        :param fileOut: file path, including the extension.
+        :type element: element or list of elements
+        :type file: string
+        :returns:  nothing
+        :rtype: -
+
+        .. note:: All the defs of the original file will be copied to the new file. Therefore you might want to run te vacuum tool to cleanup the new SVG file
+
+        **Example**
+
+        >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy
+        >>> import inkscapeMadeEasy_Draw as inkDraw
+        >>> x=inkscapeMadeEasy
+        >>> rootLayer = x.document.getroot()                             # retrieves the root layer of the file
+        >>> groupA = x.createGroup(rootLayer,label='temp')               # creates a group inside rootLayer
+        >>> groupB = x.createGroup(rootLayer,label='child')              # creates a group inside groupA
+        >>> line1 = inkDraw.line.relCoords(groupA, [[10,0]],[0,0])       # creates a line in groupA
+        >>> line2 = inkDraw.line.relCoords(groupB, [[20,0]],[0,0])       # creates a line in groupB
+        >>> self.exportSVG(line1,'file1.svg')                            # exports only line1
+        >>> self.exportSVG(groupA,'file2.svg')                           # exports groupA (and all elements contained in it)
+        >>> self.exportSVG([groupA,groupB],'file3.svg')                  # exports groupA and groupB (and all elements contained in it) to the same file
+
+        """
+        document = inkex.etree.fromstring(blankSVG)
+
+        elem_tmp = deepcopy(element)
+        # add definitions
+        defs_tmp = deepcopy(self.getDefinitions())
+        document.append(defs_tmp)
+
+        # add elements
+        if isinstance(elem_tmp, list):
+            for e in elem_tmp:
+                document.append(e)
+        else:
+            document.append(elem_tmp)
+
+        et = inkex.etree.ElementTree(document)
+        et.write(fileOut, pretty_print=True)
+
+    def uniqueIdNumber(self, prefix_id):
         """ Generates a unique ID with a given prefix ID by adding a numeric suffix
 
-        This function is used to generate a valid unique ID by concatenating a given prefix with a numeric suffix. The overall format is ``prefix-%05d``.
+        This function is used to generate a valid unique ID by concatenating a given prefix with a
+        numeric suffix. The overall format is ``prefix-%05d``.
 
-        This function makes sure the ID is unique by checking in ``doc_ids`` member. This function is specially useful for creating an unique ID for markers and other elements in defs.
+        This function makes sure the ID is unique by checking in ``doc_ids`` member.
+        This function is specially useful for creating an unique ID for markers and other elements in defs.
 
 
         :param prefix_id: prefix of the ID
@@ -180,88 +273,152 @@ class inkscapeMadeEasy(inkex.Effect):
 
         >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy 
         >>> x=inkscapeMadeEasy
-        >>> a=x.uniqueIdNumber('myName')   % a=myName-00001
-        >>> b=x.uniqueIdNumber('myName')   % b=myName-00002
-        >>> c=x.uniqueIdNumber('myName')   % c=myName-00003
+        >>> a=x.uniqueIdNumber('myName')   # a=myName-00001
+        >>> b=x.uniqueIdNumber('myName')   # b=myName-00002
+        >>> c=x.uniqueIdNumber('myName')   # c=myName-00003
 
 
         """
         numberID = 1
-        new_id = prefix_id + '-%05d' % (numberID)
+        new_id = prefix_id + '-%05d' % numberID
         while new_id in self.doc_ids:
             numberID += 1
-            new_id = prefix_id + '-%05d' % (numberID)
+            new_id = prefix_id + '-%05d' % numberID
         self.doc_ids[new_id] = 1
 
         return new_id
 
-    #---------------------------------------------
+    # ---------------------------------------------
     def getDefinitions(self):
-        """ retrieves the Defs (xpath) element of the svg file.
-
+        """ retrieves the Defs element of the svg file.
 
         This function returns the element Defs of the current svg file. This elements stores the definition (e.g. marker definition)
 
         if no Defs can be found, a new empty Defs is created
 
         :returns: the defs element
-        :rtype: xpath
+        :rtype: etree element
 
         """
         defs = self.getElemFromXpath('/svg:svg//svg:defs')
-        if defs == None:
+        if defs is None:
             defs = inkex.etree.SubElement(self.document.getroot(), inkex.addNS('defs', 'svg'))
 
         return defs
 
-    #---------------------------------------------
-    def getElemFromXpath(self,tag):
-      """ returns the element from the xml, given its tag
-      
-      :param tag: tag of the element to be searched
-      :type tag: string
-      :returns: element
-      :rtype: element
-        
-      **Example**
-        
-      >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy 
-      >>> x=inkscapeMadeEasy
-      >>> name = x.getElemFromXpath('/svg:svg//svg:defs')   # returns the list of definitions of the document
-        
-      """
-      elem = self.xpathSingle(tag)
-      #self.displayMsg(str(elem.tag) + '<--')
-      return elem
+    # ---------------------------------------------
+    def unifyDefs(self):
+        """Unify all <defs> nodes in a single <defs> node.
 
-    #---------------------------------------------
-    def getElemAtrib(self,elem,atribName):
-      """ Returns the atribute of one element, given the atribute name
-      
-      :param elem: elem under consideration
-      :param atribName: atribute to be searched
-      :type elem: element      
-      :type atribName: string
-      :returns: atribute
-      :rtype: string
-      
-      >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy 
-      >>> x=inkscapeMadeEasy
-      >>> elem= x.getElemFromXpath('/svg:svg')
-      >>> docNAme = x.getElemAtrib(elem,'sodipodi:docname')
-      """
-      #splits namespace and attrib name
-      atribList=atribName.split(':')
-      
-      if len(atribList)==1:  # if has no namespace
-        attrib=atribName
-      else:           # if has namespace
-        namespace=inkex.NSS[atribList[0]]
-        attrib='{%s}' %namespace + atribList[1]
-        
-      return elem.attrib[attrib]
+        :returns: None
+        :rtype: -
 
-    #---------------------------------------------
+        .. note:: This function does not check whether the ids are unique
+        """
+        root = self.getElemFromXpath('/svg:svg')
+        mainDef = self.getDefinitions()
+
+        for d in root.findall('.//svg:defs', namespaces=inkex.NSS):
+            if d != mainDef:
+                for child in d:
+                    mainDef.append(child)
+                    if child.tag == inkex.addNS('g', 'svg') or child.tag == 'g':
+                        self.ungroup(child)
+                d.getparent().remove(d)
+
+    # ---------------------------------------------
+    def getDefsByTag(self, tag='marker'):
+        """ retrieves the Defs elements of the svg file of a given a tag.
+
+        :returns: a list with the def elements
+        :rtype: list of etree element
+
+        """
+
+        return self.getDefinitions().findall('.//svg:%s' % tag, namespaces=inkex.NSS)
+
+    # ---------------------------------------------
+    def getDefsById(self,id):
+        """ return a list of elements in the defs node, given (part of) the id
+
+        :returns: a list with the def elements
+        :rtype: list of etree element
+
+        """
+
+        return self.getDefinitions().xpath('./*[contains(@id,"%s")]' % id)
+
+    # ---------------------------------------------
+    def getElemFromXpath(self, xpath):
+        """ returns the element from the xml, given its xpath
+
+        :param xpath: tag of the element to be searched
+        :type xpath: string
+        :returns: element
+        :rtype: element
+
+        **Example**
+
+        >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy
+        >>> x=inkscapeMadeEasy
+        >>> name = x.getElemFromXpath('/svg:svg//svg:defs')   # returns the list of definitions of the document
+
+        """
+        elem = self.xpathSingle(xpath)
+        return elem
+
+    # ---------------------------------------------
+    def getElemAttrib(self, elem, attribName):
+        """ Returns the atribute of one element, given the atribute name
+
+
+        :param elem: elem under consideration
+        :param attribName: attribute to be searched. Format:  namespace:attrName
+        :type elem: element
+        :type attribName: string
+        :returns: attribute
+        :rtype: string
+
+        >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy
+        >>> x=inkscapeMadeEasy
+        >>> elem= x.getElemFromXpath('/svg:svg')
+        >>> docNAme = x.getElemAttrib(elem,'sodipodi:docname')
+        """
+        # splits namespace and attrib name
+        atribList = attribName.split(':')
+
+        if len(atribList) == 1:  # if has no namespace
+            attrib = attribName
+        else:  # if has namespace
+            namespace = inkex.NSS[atribList[0]]
+            attrib = '{%s}' % namespace + atribList[1]
+
+        return elem.attrib[attrib]
+
+    # ---------------------------------------------
+    def getDocumentScale(self):
+        """returns the scale of the document
+
+        **Example**
+
+        >>> scale = x.getDocumentScale()
+
+        """
+
+        try:
+            elem = self.getElemFromXpath('/svg:svg')
+            width = float(self.getElemAttrib(elem, 'width').replace(self.documentUnit, ''))
+
+            viewBox = self.getElemFromXpath('/svg:svg')
+            viewBox_width = float(self.getElemAttrib(viewBox, 'viewBox').split(' ')[2])
+
+            doc_scale = viewBox_width / width
+        except:
+            doc_scale = 1.0
+
+        return doc_scale
+
+    # ---------------------------------------------
     def getDocumentName(self):
         """returns the name of the document
         
@@ -269,20 +426,20 @@ class inkscapeMadeEasy(inkex.Effect):
         :rtype: string
         
         **Example**
-        
-        >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy 
+
+        >>> from inkscapeMadeEasy_Base import inkscapeMadeEasy
         >>> x=inkscapeMadeEasy
         >>> name = x.getDocumentName()
         
         """
-        elem= self.getElemFromXpath('/svg:svg')
+        elem = self.getElemFromXpath('/svg:svg')
         try:
-            fileName = self.getElemAtrib(elem,'sodipodi:docname')
+            fileName = self.getElemAttrib(elem, 'sodipodi:docname')
         except:
             fileName = None
         return fileName
-    
-    #---------------------------------------------
+
+    # ---------------------------------------------
     def getDocumentUnit(self):
         """returns the unit of the document
         
@@ -314,14 +471,14 @@ class inkscapeMadeEasy(inkex.Effect):
         
         
         """
-        elem= self.getElemFromXpath('/svg:svg/sodipodi:namedview')
+        elem = self.getElemFromXpath('/svg:svg/sodipodi:namedview')
         try:
-            unit = self.getElemAtrib(elem,'inkscape:document-units')
+            unit = self.getElemAttrib(elem, 'inkscape:document-units')
         except:
             unit = 'px'
         return unit
 
-    #---------------------------------------------
+    # ---------------------------------------------
     def getcurrentLayer(self):
         """returns the current layer of the document
         
@@ -336,9 +493,25 @@ class inkscapeMadeEasy(inkex.Effect):
         
         """
         return self.current_layer
-        
-    #---------------------------------------------
-    def unit2userUnit(self,value,unit_in):
+
+    # ---------------------------------------------
+    def removeAbsPath(self, element):
+        abspath = self.getElemAttrib(element, 'sodipodi:absref')
+        fileName = os.path.basename(abspath)
+        dirName = os.path.dirname(abspath)
+
+        # removes sodipodi:absref attribute
+        namespace = inkex.NSS['sodipodi']
+        attrib = '{%s}' % namespace + 'absref'
+
+        element.attrib.pop(attrib, None)
+
+        # adds sodipodi:relref
+        attrib = '{%s}' % namespace + 'relref'
+        element.set(attrib, fileName)
+
+    # ---------------------------------------------
+    def unit2userUnit(self, value, unit_in):
         """Converts a value from given unit to inkscape's default unit (px)
 
         :param value: value to be converted
@@ -374,9 +547,9 @@ class inkscapeMadeEasy(inkex.Effect):
         """
 
         return value * self.unitsDict[unit_in.lower()]
-    
-    #---------------------------------------------
-    def userUnit2unit(self,value,unit_out):
+
+    # ---------------------------------------------
+    def userUnit2unit(self, value, unit_out):
         """Converts a value from inkscape's default unit (px) to specified unit
         
         :param value: value to be converted
@@ -411,9 +584,9 @@ class inkscapeMadeEasy(inkex.Effect):
         >>> x_cm = self.userUnit2unit(x_px,'cm')       # converts  5.0px -> 0.1322cm
         """
         return value / float(self.unitsDict[unit_out.lower()])
-    
-    #---------------------------------------------
-    def unit2unit(self,value,unit_in,unit_out):
+
+    # ---------------------------------------------
+    def unit2unit(self, value, unit_in, unit_out):
         """Converts a value from one provided unit to another unit
         
         :param value: value to be converted
@@ -449,13 +622,14 @@ class inkscapeMadeEasy(inkex.Effect):
         >>> x_in = 5.0
         >>> x_cm = self.unit2unit(x_in,'in','cm')       # converts  5.0in -> 12.7cm
         """
-        return value *self.unitsDict[unit_in.lower()] / float(self.unitsDict[unit_out.lower()])
-      
-    #---------------------------------------------
+        return value * self.unitsDict[unit_in.lower()] / float(self.unitsDict[unit_out.lower()])
+
+    # ---------------------------------------------
     def createGroup(self, parent, label='none'):
         """Creates a new empty group of elements.
 
-        This function creates a new empty group of elements. In order to create new elements inside this groups you must create them informing the group as the parent element.
+        This function creates a new empty group of elements. In order to create new elements inside
+        this groups you must create them informing the group as the parent element.
 
 
         :param parent: parent object of the group. It can be another group or the root element
@@ -484,7 +658,45 @@ class inkscapeMadeEasy(inkex.Effect):
 
         return group
 
-    #---------------------------------------------
+    # ---------------------------------------------
+    def ungroup(self, group):
+        """Ungroup elements
+
+        The new parent element of the ungrouped elements will be the parent of the removed group. See example below
+
+        :param group: group to be removed
+        :type group: group element
+        :returns: list of the elements previously contained in the group
+        :rtype: list of elements
+
+        **Example**
+
+
+        >>> rootLayer = self.document.getroot()                              # retrieves the root layer of the file
+        >>> groupA = self.createGroup(rootLayer,label='temp')                # creates a group inside rootLayer
+        >>> groupB = self.createGroup(groupA,label='temp')                # creates a group inside groupA
+        >>> line1 = inkscapeMadeEasy_Draw.line.relCoords(groupA, [[10,0]],[0,0])       # creates a line in groupA
+        >>> line2 = inkscapeMadeEasy_Draw.line.relCoords(groupB, [[20,0]],[0,0])       # creates a line in groupB
+        >>> line3 = inkscapeMadeEasy_Draw.line.relCoords(groupB, [[30,0]],[0,0])       # creates a line in groupB
+        >>>  # at this point, the file struct is:   groupA[ line1, groupB[ line2, line3 ] ]
+        >>> elemList = self.ungroup(groupB)                                    # ungroup line2 and line3. elemList is a list containing line2 and line3 elements.
+        >>>  # now the file struct is:   groupA[ line1, line2, line3 ]
+        """
+
+        if group.tag == 'g' or group.tag == inkex.addNS('g', 'svg'):  # if object is a group
+            parent = group.getparent()
+
+            listElem=[]
+            if parent is not None:
+                for child in group:
+                    parent.append(child)
+                    listElem.append(child)
+
+                self.removeElement(group)
+
+        return listElem
+
+    # ---------------------------------------------
     def getTransformMatrix(self, element):
         """Returns the transformation attribute of the given element and the resulting transformation matrix (numpy Array)
 
@@ -572,7 +784,7 @@ class inkscapeMadeEasy(inkex.Effect):
 
         return transfAttrib, transfMatrix
 
-    #---------------------------------------------
+    # ---------------------------------------------
     def rotateElement(self, element, center, angleDeg):
         """Rotates the element using the transformation attribute.
 
@@ -612,7 +824,43 @@ class inkscapeMadeEasy(inkex.Effect):
 
         element.attrib['transform'] = newTransform
 
-    #---------------------------------------------
+    def copyElement(self, element, newParent, distance=None, angleDeg=None):
+        """Copies one element to the same or other parent Element.
+
+        It is possible to copy elements isolated or entire groups.
+
+        :param element: element object to be copied
+        :param newParent: New parent object. It can be another group or the group
+        :param distance: tuple with the distance to move the object. If None, then the copy is placed at the same position
+        :param angleDeg: angle of rotation in degrees, counter-clockwise direction
+        :type element: element object
+        :type newParent: element object
+        :type distance: tuple
+        :type angleDeg: float
+        :returns:  newElement
+        :rtype: element object
+
+        **Example**
+
+        >>> rootLayer = self.document.getroot()                              # retrieves the root layer of the file
+        >>> groupA = self.createGroup(rootLayer,label='temp')                # creates a group inside rootLayer
+        >>> line1 = inkscapeMadeEasy_Draw.line.relCoords(groupA, [[5,0]],[0,0])       # creates a line in groupA
+        >>> line2 = inkscapeMadeEasy_Draw.line.relCoords(rootLayer, [[5,0]],[0,0])    # creates a line in rootLayer
+        >>> self.copyElement(line2,groupA)                                  # create a copy of line2 in groupA
+        >>> self.moveElement(groupA,[10,-10])                                # moves line2  DeltaX=10, DdeltaY=-10
+        """
+        newElem = deepcopy(element)
+        newParent.append(newElem)
+
+        if distance is not None:
+            self.moveElement(newElem, distance)
+
+        if angleDeg is not None:
+            self.rotateElement(newElem, self.getCenter(newElem), angleDeg)
+
+        return newElem
+
+    # ---------------------------------------------
     def moveElement(self, element, distance):
         """Moves the element using the transformation attribute.
 
@@ -651,8 +899,8 @@ class inkscapeMadeEasy(inkex.Effect):
 
         element.attrib['transform'] = newTransform
 
-    #---------------------------------------------
-    def scaleElement(self, element, scaleX=1.0, scaleY=0.0):
+    # ---------------------------------------------
+    def scaleElement(self, element, scaleX=1.0, scaleY=0.0, center=None):
         """Scales the element using the transformation attribute.
 
         It is possible to scale elements isolated or entire groups.
@@ -660,9 +908,11 @@ class inkscapeMadeEasy(inkex.Effect):
         :param element: element object to be rotated
         :param scaleX: scaling factor in X direction. Default=1.0
         :param scaleY: scaling factor in Y direction. Default=0.0
+        :param center: center point considered as the origin for the scaling. Default=None. If None, the origin is adopted
         :type element: element object
         :type scaleX: float
         :type scaleX: float
+        :type center: tuple
         :returns:  nothing
         :rtype: -
 
@@ -679,6 +929,8 @@ class inkscapeMadeEasy(inkex.Effect):
         >>> self.scaleElement(circ1,2.0,3.0)                                 # scales x2 in X and x3 in Y
         >>> self.scaleElement(groupA,0.5)                                    # scales x0.5 the group in both X and Y directions
         """
+        if center is not None:
+            self.moveElement(element, [-center[0], -center[1]])
 
         transfString = ''
 
@@ -695,11 +947,14 @@ class inkscapeMadeEasy(inkex.Effect):
             if scaleY != 0.0:
                 newTransform = 'scale(%f %f)' % (scaleX, scaleY)
             else:
-                newTransform = 'scale(%f)' % (scaleX)
+                newTransform = 'scale(%f)' % scaleX
 
         element.attrib['transform'] = newTransform
 
-    #---------------------------------------------
+        if center is not None:
+            self.moveElement(element, [center[0], center[1]])
+
+    # ---------------------------------------------
     def findMarker(self, markerName):
         """Search for markerName in the document.
 
@@ -710,15 +965,13 @@ class inkscapeMadeEasy(inkex.Effect):
         :rtype: bool
         """
 
-        doc_markers = {}
-
-        for child in self.getDefinitions():
-            if child.get('id') == markerName:
+        for m in self.getDefsByTag(tag='marker'):
+            if m.get('id') == markerName:
                 return True
 
         return False
 
-    #---------------------------------------------
+    # ---------------------------------------------
     def getPoints(self, element):
         """Retrieves the list of points of the element.
 
@@ -729,7 +982,8 @@ class inkscapeMadeEasy(inkex.Effect):
         :returns: list of points
         :rtype: list of list
 
-        .. note:: This function will consider any transformation stored in transform attribute, that is, it will compute the resulting coordinates of each object
+        .. note:: This function will consider any transformation stored in transform attribute,
+            that is, it will compute the resulting coordinates of each object
 
         **Example**
 
@@ -743,13 +997,14 @@ class inkscapeMadeEasy(inkex.Effect):
         listCoords = []
 
         # check if element is valid. 'path', 'text' and 'g' are valid
-        accepted_strings = set( [ inkex.addNS('path', 'svg'), inkex.addNS('text', 'svg'), 'g', 'path'] )
+        accepted_strings = set([inkex.addNS('path', 'svg'), inkex.addNS('text', 'svg'), 'g', 'path', 'use', inkex.addNS('use', 'svg')])
         if element.tag not in accepted_strings:
             return listCoords
 
         if element.tag == inkex.addNS('path', 'svg') or element.tag == 'path':  # if object is path
 
-            dString = re.sub('([a-df-zA-DF-Z])+?', r'#\1#', element.attrib['d']).replace('z', '').replace('Z', '').replace(',', ' ').split('#')  # adds special character between letters and splits. the first regular expression excludes e and E bc they are used to represent scientific notation  =S
+            # adds special character between letters and splits. the first regular expression excludes e and E bc they are used to represent scientific notation  =S
+            dString = re.sub('([a-df-zA-DF-Z])+?', r'#\1#', element.attrib['d']).replace('z', '').replace('Z', '').replace(',', ' ').split('#')
 
             dString = [i.lstrip() for i in dString]  # removes leading spaces from strings
             dString = filter(None, dString)  # removes empty elements
@@ -788,27 +1043,27 @@ class inkscapeMadeEasy(inkex.Effect):
 
                 if commandType in 'h':  # if h
                     for i in range(0, len(X)):  # convert to abs coordinates
-                        if i==0:
+                        if i == 0:
                             X[i] = X[i] + Xcurrent
                         else:
                             X[i] = X[i] + X[i - 1]
 
                 if commandType in 'v':  # if v
                     for i in range(0, len(Y)):  # convert to abs coordinates
-                        if i==0:
+                        if i == 0:
                             Y[i] = Y[i] + Ycurrent
                         else:
                             Y[i] = Y[i] + Y[i - 1]
-                       
+
                 if commandType in 'mltcsqa':  # if m or l
                     for i in range(0, len(X)):  # convert to abs coordinates
-                        if i==0:
+                        if i == 0:
                             X[i] = X[i] + Xcurrent
                             Y[i] = Y[i] + Ycurrent
                         else:
                             X[i] = X[i] + X[i - 1]
                             Y[i] = Y[i] + Y[i - 1]
-                            
+
                 coords = zip(X, Y)
                 listCoords.extend(coords)
                 Xcurrent = X[-1]
@@ -821,23 +1076,43 @@ class inkscapeMadeEasy(inkex.Effect):
             listCoords.extend(coords)
 
         if element.tag == 'g':  # if object is a group
-            for obj in element.iter():
-                if obj != element:
+            for obj in element.iterchildren("*"):
+                if obj != element and obj.tag != 'defs':
                     listPoints = self.getPoints(obj)
                     listCoords.extend(listPoints)
 
-        # apply transformation
-        transfMat = self.getTransformMatrix(element)[1]
+        if element.tag == 'use' or element.tag == inkex.addNS('use', 'svg'):  # if object is a use
+            listCoordsTemp = []
+            x = float(element.attrib['x'])
+            y = float(element.attrib['y'])
+            link = self.getElemAttrib(element, 'xlink:href').replace('#','')
+            elemLink = self.getElementById(link)
+            for obj in elemLink.iter():
+                if obj != elemLink:
+                    listPoints = self.getPoints(obj)
+                    listCoordsTemp.extend(listPoints)
 
-        # creates numpy array with the points to be transformed
-        coordsNP = np.hstack((np.array(listCoords), np.ones([len(listCoords), 1]))).transpose()
-                
-        coordsTransformed = np.dot(transfMat, coordsNP)
-        coordsTransformed = np.delete(coordsTransformed, 2, 0).transpose().tolist()  # remove last line, transposes and converts to list of lists
+            #apply translation
+            listCoords=[[coord[0]+x,coord[1]+y] for coord in listCoordsTemp]
+
+
+        # apply transformation
+        if len(listCoords)>0:
+
+            # creates numpy array with the points to be transformed
+            transfMat = self.getTransformMatrix(element)[1]
+
+            coordsNP = np.hstack((np.array(listCoords), np.ones([len(listCoords), 1]))).transpose()
+
+            coordsTransformed = np.dot(transfMat, coordsNP)
+            coordsTransformed = np.delete(coordsTransformed, 2, 0).transpose().tolist()  # remove last line, transposes and converts to list of lists
+
+        else:
+            coordsTransformed = []
 
         return coordsTransformed
 
-    #---------------------------------------------
+    # ---------------------------------------------
     def getBoundingBox(self, element):
         """Retrieves the bounding Box of the element.
 
@@ -848,7 +1123,8 @@ class inkscapeMadeEasy(inkex.Effect):
         :returns: two lists: [xMin,yMin] and [xMax,yMax]
         :rtype: list
 
-        .. note:: This function will consider any transformation stored in transform attribute, that is, it will compute the resulting coordinates of each object
+        .. note:: This function will consider any transformation stored in transform attribute,
+            that is, it will compute the resulting coordinates of each object
 
         **Example**
 
@@ -864,7 +1140,7 @@ class inkscapeMadeEasy(inkex.Effect):
         bboxMin = np.min(coordsNP, 0)
         return bboxMin.tolist(), bboxMax.tolist()
 
-    #---------------------------------------------
+    # ---------------------------------------------
     def getCenter(self, element):
         """Retrieves the center coordinates of the bounding Box of the element.
 
@@ -875,7 +1151,8 @@ class inkscapeMadeEasy(inkex.Effect):
         :returns: two lists: [xCenter,yCenter]
         :rtype: list
 
-        .. note:: This function will consider any transformation stored in transform attribute, that is, it will compute the resulting coordinates of each object
+        .. note:: This function will consider any transformation stored in transform attribute,
+            that is, it will compute the resulting coordinates of each object
 
         **Example**
 
@@ -891,7 +1168,7 @@ class inkscapeMadeEasy(inkex.Effect):
 
         return bboxCenter
 
-    def getSegmentFromPoints(self, pointList,normalDirection='R'):
+    def getSegmentFromPoints(self, pointList, normalDirection='R'):
         """given two points of a straight line segment, returns the parameters of that segment:
         
         length, angle (in radians), tangent unitary vector and normal unitary vector
@@ -910,33 +1187,32 @@ class inkscapeMadeEasy(inkex.Effect):
         
         **Example**
 
-        >>> segementParam = getSegmentFromPoints([[1,1],[2,2]],'R')                               # returns [1.4142, 0.78540, [0.7071,0.7071], [0.7071,-0.7071] ]
-        >>> segementParam = getSegmentFromPoints([[1,1],[2,2]],'L')                               # returns [1.4142, 0.78540, [0.7071,0.7071], [-0.7071,0.7071] ]
+        >>> segmentParam = getSegmentFromPoints([[1,1],[2,2]],'R')                               # returns [1.4142, 0.78540, [0.7071,0.7071], [0.7071,-0.7071] ]
+        >>> segmentParam = getSegmentFromPoints([[1,1],[2,2]],'L')                               # returns [1.4142, 0.78540, [0.7071,0.7071], [-0.7071,0.7071] ]
 
 
         """
 
         # tangent versor (pointing P2)
-        P1=np.array(pointList[0])
-        P2=np.array(pointList[1])
-        
-        t_vector=P2-P1
-        length=np.linalg.norm(t_vector)
-        t_versor=t_vector/length
-        
+        P1 = np.array(pointList[0])
+        P2 = np.array(pointList[1])
+
+        t_vector = P2 - P1
+        length = np.linalg.norm(t_vector)
+        t_versor = t_vector / length
+
         # normal vector: counter-clockwise with respect to tangent vector
         if normalDirection in 'rR':
-          n_versor=np.array([t_versor[1],-t_versor[0]])
+            n_versor = np.array([t_versor[1], -t_versor[0]])
         if normalDirection in 'lL':
-          n_versor=np.array([-t_versor[1],t_versor[0]])
-        
+            n_versor = np.array([-t_versor[1], t_versor[0]])
+
         # angle
-        theta=math.atan2(t_versor[1],t_versor[0])
-        
-        return [length,theta,t_versor,n_versor]
-      
-      
-    def getSegmentParameters(self, element,normalDirection='R'):
+        theta = math.atan2(t_versor[1], t_versor[0])
+
+        return [length, theta, t_versor, n_versor]
+
+    def getSegmentParameters(self, element, normalDirection='R'):
         """given a path segment composed by only two points, returns the parameters of that segment:
         
         length, angle (in radians), start point, end point, tangent unitary vector and normal unitary vector
@@ -959,7 +1235,8 @@ class inkscapeMadeEasy(inkex.Effect):
         If the path element has more than two points, the function returns an empty list
         
            
-        .. note:: This function will consider any transformation stored in transform attribute, that is, it will compute the resulting coordinates of each object
+        .. note:: This function will consider any transformation stored in transform attribute,
+            that is, it will compute the resulting coordinates of each object
 
         **Example**
 
@@ -968,22 +1245,76 @@ class inkscapeMadeEasy(inkex.Effect):
         >>> segementList = getSegmentParameters(line1,'R')                               # returns [[1,1], [2,2],1.4142, 0.78540,  [0.7071,0.7071], [0.7071,-0.7071] ]
 
         """
-        
+
         # check if element is valid. 'path'
-        accepted_strings = set( [ inkex.addNS('path', 'svg'), 'path'] )
+        accepted_strings = set([inkex.addNS('path', 'svg'), 'path'])
         if element.tag not in accepted_strings:
             return []
 
         listPoints = self.getPoints(element)
-        if len(listPoints) >2:  # if the path has more than two points
+        if len(listPoints) > 2:  # if the path has more than two points
             return []
 
-        data = self.getSegmentFromPoints( listPoints,normalDirection)
-        
+        data = self.getSegmentFromPoints(listPoints, normalDirection)
+
         return listPoints + data
-    
-    
-    
-    
-    
-    
+
+
+blankSVG = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 793.7008056641 1122.51965332"
+   version="1.1"
+   id="svg1406"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="blank.svg">
+  <metadata
+     id="metadata1412">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1056"
+     id="namedview1408"
+     showgrid="true"
+     inkscape:snap-text-baseline="true"
+     inkscape:zoom="0.7296085858586"
+     inkscape:cx="396.8503937008"
+     inkscape:cy="561.2598425197"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1406">
+    <inkscape:grid
+       type="xygrid"
+       id="grid1957" />
+  </sodipodi:namedview>
+</svg>
+
+"""
