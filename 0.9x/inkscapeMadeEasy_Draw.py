@@ -23,33 +23,37 @@
 # --------------------------------------------------------------------------------------
 
 # Please uncomment (remove the # character) in the following line to disable LaTeX support via textext extension.
-#useLatex=False
+# useLatex=False
 
 
 try:
-  useLatex
+    useLatex
 except NameError:
-  useLatex=True
+    useLatex = True
 else:
-  useLatex=False
-  
-import inkex
+    useLatex = False
+
 import math
-import simplestyle
+
 import numpy as np
-from lxml.etree import tostring
+
+import inkex
+import simplestyle
+
 if useLatex:
-  import textextLib.textext as textext
-  
+    import textextLib.textext as textext
+
 import sys
+import os
 import tempfile
+import copy
+
 """
 This module contains a set of classes and some functions to help dealing with drawings.
 
 This module requires the following modules: inkex, math, simplestyle (from inkex module), numpy, lxml and sys
 
 """
-
 
 
 def displayMsg(msg):
@@ -62,18 +66,20 @@ def displayMsg(msg):
     
     """
     sys.stderr.write(msg + '\n')
-    
+
+
 def Dump(obj, file='./dump_file.txt', mode='w'):
     """Function to easily output the result of ``str(obj)`` to a file
 
-    This function was created to help debugging the code while it is running under inkscape. Since inkscape does not possess a terminal as today (2016), this function overcomes partially the issue of sending things to stdout by dumping result of the function ``str()`` in a text file.
+    This function was created to help debugging the code while it is running under inkscape. Since inkscape does not possess a terminal as today (2016),
+    this function overcomes partially the issue of sending things to stdout by dumping result of the function ``str()`` in a text file.
 
 
     :param obj: object to sent to the file. Any type that can be used in ``str()``
     :param file: file path. Default: ``./dump_file.txt``
     :param mode: writing mode of the file. Default: ``w`` (write)
     :type obj: any, as long as ``str(obj``) is implemented (see ``__str__()`` metaclass definition )
-    :type arg2: string
+    :type file: string
     :type mode: string
     :returns: nothing
     :rtype: -
@@ -83,9 +89,9 @@ def Dump(obj, file='./dump_file.txt', mode='w'):
     **Example**
 
     >>> vector1=[1,2,3,4,5,6]
-    >>> Dump(vector,file='~/temporary.txt',mode='w')   % writes the list to a file
+    >>> Dump(vector1,file='~/temporary.txt',mode='w')   # writes the list to a file
     >>> vector2=[7,8,9,10]
-    >>> Dump(vector2,file='~/temporary.txt',mode='a')   % append the list to a file
+    >>> Dump(vector2,file='~/temporary.txt',mode='a')   # append the list to a file
 
     """
     file = open(file, mode)
@@ -104,6 +110,7 @@ class color():
     .. note:: alpha channel is not implemented yet. Assume alpha=1.0
 
     """
+
     @staticmethod
     def defined(colorName):
         """ Returns the color string representing a predefined color name
@@ -123,12 +130,8 @@ class color():
         >>> colorString = color.defined('red')                   # returns #ff0000 representing red color
 
         """
-        if colorName not in ['Dred', 'red', 'Lred',
-                             'Dblue', 'blue', 'Lblue',
-                             'Dgreen', 'green', 'Lgreen',
-                             'Dyellow', 'yellow', 'Lyellow',
-                             'Dmagen', 'magen', 'Lmagen',
-                             'black', 'white']:
+        if colorName not in ['Dred', 'red', 'Lred', 'Dblue', 'blue', 'Lblue', 'Dgreen', 'green', 'Lgreen', 'Dyellow', 'yellow', 'Lyellow', 'Dmagen',
+                             'magen', 'Lmagen', 'black', 'white']:
             sys.exit("InkscapeDraw.color.defined() :  Error. color -->" + colorName + "<-- not defined")
 
         if colorName == 'Dred':
@@ -201,7 +204,7 @@ class color():
 
         return '#' + '%s%s%s' % (RGBhex[0], RGBhex[1], RGBhex[2])
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def gray(percentage):
         """ returns a gray level compatible string based on white percentage between 0.0 and 1.0
@@ -228,10 +231,11 @@ class color():
 
         return color.RGB([RGBLevel] * 3)
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def colorPickerToRGBalpha(colorPickerString):
-        """ Function that converts the string returned by  the widget 'color' in the .inx file into 2 strings, one representing the color in format ``#RRGGBB`` and the other representing the alpha channel ``AA``
+        """ Function that converts the string returned by  the widget 'color' in the .inx file into 2 strings,
+        one representing the color in format ``#RRGGBB`` and the other representing the alpha channel ``AA``
 
         :param colorPickerString: string returned by 'color' widget
         :type colorPickerString: string
@@ -278,17 +282,20 @@ class color():
         >>>     color,alpha = inkDraw.color.colorPickerToRGBalpha(self.options.myColorPickerVar)       # returns the string representing the selected color and alpha channel
 
         """
-        colorHex = hex(int(colorPickerString) & 0xffffffff)[2:].zfill(8).upper()  # [2:] removes the 0x ,  zfill adds the leading zeros, upper: uppercase
+        colorHex = hex(int(colorPickerString) & 0xffffffff)[2:].zfill(
+            8).upper()  # [2:] removes the 0x ,  zfill adds the leading zeros, upper: uppercase
         RGB = '#' + colorHex[0:6]
         alpha = colorHex[6:]
         return [RGB, alpha]
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def parseColorPicker(stringColorOption, stringColorPicker):
-        """ Function that converts the string returned by  the widgets 'color' and 'optiongroup' in the .inx file into 2 strings, one representing the color in format ``#RRGGBB`` and the other representing the alpha channel ``AA``
+        """ Function that converts the string returned by  the widgets 'color' and 'optiongroup' in the .inx file into 2 strings,
+        one representing the color in format ``#RRGGBB`` and the other representing the alpha channel ``AA``
 
-        You must have in your .inx both 'optiongroup' and 'color' widgets as defined below. You don't have to have all the color options presented in the example. That is the most complete example, considering the default colors in color.defined method.   
+        You must have in your .inx both 'optiongroup' and 'color' widgets as defined below. You don't have to have all the color options presented in the example.
+        That is the most complete example, considering the default colors in color.defined method.
 
 
         :param stringColorOption: string returned by 'optiongroup' widget
@@ -304,7 +311,9 @@ class color():
 
         **Example**
 
-        It works in the following manner: The user select in the optiongroup list the desired color. All pre defined colors are listed there. There is also a 'my default color' where you can set your preferred default color and a 'use color picker' to select from the color picker widget. Keep in mind that the selected color in this widget will be considered ONLY if 'use color picker' option is selected. 
+        It works in the following manner: The user select in the optiongroup list the desired color. All pre defined colors are listed there.
+        There is also a 'my default color' where you can set your preferred default color and a 'use color picker' to select from the color picker widget.
+        Keep in mind that the selected color in this widget will be considered ONLY if 'use color picker' option is selected.
 
         Let your .inx file contains a widget of type 'color' with the name 'myColorPicker' and another 'optiongroup' with the name 'myColorOption'::
 
@@ -372,9 +381,11 @@ class marker():
     This class contains only static methods so that you don't have to inherit this in your class
 
     """
-    #---------------------------------------------
+
+    # ---------------------------------------------
     @staticmethod
-    def createMarker(ExtensionBaseObj, nameID, markerPath, RenameMode=0, strokeColor=color.defined('black'), fillColor=color.defined('black'), lineWidth=1.0, markerTransform=None):
+    def createMarker(ExtensionBaseObj, nameID, markerPath, RenameMode=0, strokeColor=color.defined('black'), fillColor=color.defined('black'),
+                     lineWidth=1.0, markerTransform=None):
         """Creates a custom line marker
 
         :param ExtensionBaseObj: Most of the times you have to use 'self' from inkscapeMadeEasy related objects
@@ -453,11 +464,11 @@ class marker():
 
         if RenameMode == 2:
             numberID = 1
-            new_id = nameID + '_n%05d' % (numberID)
+            new_id = nameID + '_n%05d' % numberID
             while new_id in ExtensionBaseObj.doc_ids:
                 numberID += 1
 
-                new_id = nameID + '_n%05d' % (numberID)
+                new_id = nameID + '_n%05d' % numberID
             ExtensionBaseObj.doc_ids[new_id] = 1
             nameID = new_id
 
@@ -468,9 +479,7 @@ class marker():
                     defs.remove(obj)
 
         # creates a new marker
-        marker_attribs = {inkex.addNS('stockid', 'inkscape'): nameID,
-                          'orient': 'auto', 'refY': '0.0', 'refX': '0.0',
-                          'id': nameID,
+        marker_attribs = {inkex.addNS('stockid', 'inkscape'): nameID, 'orient': 'auto', 'refY': '0.0', 'refX': '0.0', 'id': nameID,
                           'style': 'overflow:visible'}
 
         newMarker = inkex.etree.SubElement(ExtensionBaseObj.getDefinitions(), inkex.addNS('marker', 'defs'), marker_attribs)
@@ -480,8 +489,7 @@ class marker():
         if not strokeColor:
             strokeColor = 'none'
 
-        marker_style = {'fill-rule': 'evenodd', 'fill': fillColor,
-                        'stroke': strokeColor, 'stroke-width': str(lineWidth)}
+        marker_style = {'fill-rule': 'evenodd', 'fill': fillColor, 'stroke': strokeColor, 'stroke-width': str(lineWidth)}
 
         marker_lineline_attribs = {'d': markerPath, 'style': simplestyle.formatStyle(marker_style)}
 
@@ -495,7 +503,7 @@ class marker():
         # print tostring(ExtensionBaseObj.getDefinitions())
         return nameID
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def createDotMarker(ExtensionBaseObj, nameID, RenameMode=0, scale=0.4, strokeColor=color.defined('black'), fillColor=color.defined('black')):
         """Creates a dotS/M/L marker, exactly like inkscape default markers
@@ -542,7 +550,7 @@ class marker():
         markerTransform = 'scale(' + str(scale) + ') translate(7.4, 1)'
         return marker.createMarker(ExtensionBaseObj, nameID, markerPath, RenameMode, strokeColor, fillColor, width, markerTransform)
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def createCrossMarker(ExtensionBaseObj, nameID, RenameMode=0, scale=0.4, strokeColor=color.defined('black'), fillColor=color.defined('black')):
         """Creates a cross marker
@@ -589,7 +597,7 @@ class marker():
         width = 1.0
         return marker.createMarker(ExtensionBaseObj, nameID, markerPath, RenameMode, strokeColor, fillColor, width, markerTransform)
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def createArrow1Marker(ExtensionBaseObj, nameID, RenameMode=0, scale=0.4, strokeColor=color.defined('black'), fillColor=color.defined('black')):
         """Creates a arrowS/M/L arrow markers (both start and end markers), exactly like inkscape
@@ -649,7 +657,7 @@ class marker():
 
         return [nameStart, nameEnd]
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def createInfLineMarker(ExtensionBaseObj, nameID, RenameMode=0, scale=1.0, strokeColor=None, fillColor=color.defined('black')):
         """Creates ellipsis markers, both start and end markers.
@@ -737,10 +745,10 @@ class lineStyle():
 
     """
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
-    def set(lineWidth=1.0, lineColor=color.defined('black'), fillColor=None, lineJoin='round',
-            lineCap='round', markerStart=None, markerMid=None, markerEnd=None, strokeDashArray=None):
+    def set(lineWidth=1.0, lineColor=color.defined('black'), fillColor=None, lineJoin='round', lineCap='round', markerStart=None, markerMid=None,
+            markerEnd=None, strokeDashArray=None):
         """ Creates a new line style
 
         :param lineWidth: line width. Default: 1.0
@@ -802,12 +810,9 @@ class lineStyle():
             strokeDashArray = 'none'
 
         # dictionary with the styles
-        lineStyle = {'stroke': lineColor,
-                     'stroke-width': str(lineWidth),
-                     'stroke-dasharray': strokeDashArray,
-                     'fill': fillColor}
+        lineStyle = {'stroke': lineColor, 'stroke-width': str(lineWidth), 'stroke-dasharray': strokeDashArray, 'fill': fillColor}
 
-        #Endpoint and junctions
+        # Endpoint and junctions
         lineStyle['stroke-linecap'] = lineCap
         lineStyle['stroke-linejoin'] = lineJoin
 
@@ -823,7 +828,7 @@ class lineStyle():
 
         return lineStyle
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def setSimpleBlack(lineWidth=1.0):
         """Defines a standard black line style.
@@ -864,9 +869,11 @@ class textStyle():
     This class contains only static methods so that you don't have to inherit this in your class
 
     """
-    #---------------------------------------------
+
+    # ---------------------------------------------
     @staticmethod
-    def set(fontSize=10, justification='left', textColor=color.defined('black'), fontFamily='Sans', fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px'):
+    def set(fontSize=10, justification='left', textColor=color.defined('black'), fontFamily='Sans', fontStyle='normal', fontWeight='normal',
+            lineSpacing='100%', letterSpacing='0px', wordSpacing='0px'):
         """Defines a new text style
 
         :param fontSize: size of the font in px. Default: 10
@@ -907,7 +914,8 @@ class textStyle():
         >>> 
         >>>   def effect(self):
         >>> 
-        >>>     myTextStyle=inkDraw.textStyle.set(fontSize=10, justification='left', textColor=color.defined('black'), fontFamily='Sans', fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px')
+        >>>     myTextStyle=inkDraw.textStyle.set(fontSize=10, justification='left', textColor=color.defined('black'), fontFamily='Sans',
+        >>>                                       fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px')
         """
 
         if not textColor:
@@ -922,27 +930,21 @@ class textStyle():
         if justification == 'center':
             anchor = 'middle'
 
-        textStyle = {'font-size': str(fontSize) + 'px',
-                     'font-style': fontStyle,
-                     'font-weight': fontWeight,
-                     'text-align': justification,   # start, center, end
-                     'line-height': lineSpacing,
-                     'letter-spacing': letterSpacing,
-                     'word-spacing': wordSpacing,
-                     'text-anchor': anchor,   # start, middle, end
-                     'fill': textColor,
-                     'fill-opacity': '1',
-                     'stroke': 'none',
-                     'font-family': fontFamily}
+        textStyle = {'font-size': str(fontSize) + 'px', 'font-style': fontStyle, 'font-weight': fontWeight, 'text-align': justification,
+                     # start, center, end
+                     'line-height': lineSpacing, 'letter-spacing': letterSpacing, 'word-spacing': wordSpacing, 'text-anchor': anchor,
+                     # start, middle, end
+                     'fill': textColor, 'fill-opacity': '1', 'stroke': 'none', 'font-family': fontFamily}
 
         return textStyle
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def setSimpleBlack(fontSize=10, justification='left'):
         """Defines a standard black text style
 
-        The only adjustable parameter are font size and justification. The fixed parameters are: textColor=color.defined('black'), fontFamily='Sans', fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px.
+        The only adjustable parameter are font size and justification. The fixed parameters are: textColor=color.defined('black'), fontFamily='Sans',
+        fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px.
 
         :param fontSize: size of the font in px. Default: 10
         :param justification: text justification. ``left``, ``right``, ``center``. Default: ``left``
@@ -971,12 +973,13 @@ class textStyle():
         """
         return textStyle.set(fontSize, justification)
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
     def setSimpleColor(fontSize=10, justification='left', textColor=color.defined('black')):
         """Defines a standard colored text style
 
-        The only adjustable parameter are font size justification and textColor. The fixed parameters are: fontFamily='Sans', fontStyle='normal', fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px.
+        The only adjustable parameter are font size justification and textColor. The fixed parameters are: fontFamily='Sans', fontStyle='normal',
+        fontWeight='normal', lineSpacing='100%', letterSpacing='0px', wordSpacing='0px.
 
         :param fontSize: size of the font in px. Default: 10
         :param justification: text justification. ``left``, ``right``, ``center``. Default: ``left``
@@ -1016,8 +1019,10 @@ class text():
     .. note:: LaTeX support is an optional feature, **enabled by default**. Please refer to :ref:`latexSupport` on how to disable it.
     
     """
+
     @staticmethod
-    def write(ExtensionBaseObj, text, coords, parent, textStyle=textStyle.setSimpleBlack(fontSize=10, justification='left'), fontSize=None, justification=None, angleDeg=0.0):
+    def write(ExtensionBaseObj, text, coords, parent, textStyle=textStyle.setSimpleBlack(fontSize=10, justification='left'), fontSize=None,
+              justification=None, angleDeg=0.0):
         """Adds a text line to the document
 
         :param ExtensionBaseObj: Most of the times you have to use 'self' from inkscapeMadeEasy related objects
@@ -1067,7 +1072,7 @@ class text():
         >>>     inkDraw.text.write(self, text=myText, coords=[5.0,6.0], parent=root_layer, textStyle=mySimpleStyle, fontSize=None, justification=None, angleDeg=0.0)
         >>> 
         >>>     # creates a group in root-layer and add text to it
-        >>>     myGroup = self.createGroup(parent=root_layer,'textGroup')
+        >>>     myGroup = self.createGroup(root_layer,'textGroup')
         >>>     #adds a text 'foo bar', rotated 45 degrees, at the point x=0,y=0, overriding justification of mySimpleStyle
         >>>     inkDraw.text.write(self, text='foo bar', coords=[0.0,0.0], parent=myGroup, textStyle=mySimpleStyle, fontSize=None, justification='left', angleDeg=45.0)
 
@@ -1086,40 +1091,38 @@ class text():
         if fontSize:
             textStyle['font-size'] = str(fontSize) + 'px'
 
-        AttribsText = {inkex.addNS('space', 'xml'): "preserve",
-                       'style': simplestyle.formatStyle(textStyle),
-                       'x': str(coords[0]),
-                       'y': str(coords[1]),
+        AttribsText = {inkex.addNS('space', 'xml'): "preserve", 'style': simplestyle.formatStyle(textStyle), 'x': str(coords[0]), 'y': str(coords[1]),
                        inkex.addNS('linespacing', 'sodipodi'): textStyle['line-height']}
 
-        #textObj = inkex.etree.SubElement(parent, inkex.addNS('text','svg'), AttribsText )
+        # textObj = inkex.etree.SubElement(parent, inkex.addNS('text','svg'), AttribsText )
 
         textObj = inkex.etree.Element(inkex.addNS('text', 'svg'), AttribsText)
         parent.append(textObj)
 
-        AttribsLineText = {inkex.addNS('role', 'sodipodi'): "line",
-                           'x': str(coords[0]),
-                           'y': str(coords[1])}
+        AttribsLineText = {inkex.addNS('role', 'sodipodi'): "line", 'x': str(coords[0]), 'y': str(coords[1])}
 
-        textLines=text.split('\\n')
-        
+        textLines = text.split('\\n')
+
         for n in range(len(textLines)):
-          myTspan = inkex.etree.SubElement(textObj, inkex.addNS('tspan', 'svg'), AttribsLineText)
-          myTspan.text = textLines[n].decode('utf-8')   
-          
+            myTspan = inkex.etree.SubElement(textObj, inkex.addNS('tspan', 'svg'), AttribsLineText)
+            myTspan.text = textLines[n].decode('utf-8')
+
         if angleDeg != 0:
             ExtensionBaseObj.rotateElement(textObj, center=coords, angleDeg=angleDeg)  # negative angle bc inkscape is upside down
 
         return textObj
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
-    def latex(ExtensionBaseObj, parent, LaTeXtext, position, fontSize=10, refPoint='cc', textColor=color.defined('black'), LatexCommands=' ', angleDeg=0, preambleFile=None):
+    def latex(ExtensionBaseObj, parent, LaTeXtext, position, fontSize=10, refPoint='cc', textColor=color.defined('black'), LatexCommands=' ',
+              angleDeg=0, preambleFile=None):
         """Draws a text line using LaTeX. You can use any LaTeX contents here.
 
-        .. note:: Employs the excellent 'textext' extension from Pauli Virtanen's <https://pav.iki.fi/software/textext/> is incorporated here. Please refer to `Main Features`_ section for further instructions
+        .. note:: Employs the excellent 'textext' extension from Pauli Virtanen's <https://pav.iki.fi/software/textext/> is incorporated here.
+            Please refer to `Main Features`_ section for further instructions
         
-        .. note:: LaTeX support is an optional feature that requires a few extra packages to be installed outside inkscape. **It is enabled by default**. Please refer to :ref:`latexSupport` on how to disable it. If disabled, this function will still work, internally calling the method text.write().
+        .. note:: LaTeX support is an optional feature that requires a few extra packages to be installed outside inkscape. **It is enabled by default**.
+            Please refer to :ref:`latexSupport` on how to disable it. If disabled, this function will still work, internally calling the method text.write().
 
         :param ExtensionBaseObj: Most of the times you have to use 'self' from inkscapeMadeEasy related objects
         :param parent: parent object        
@@ -1198,38 +1201,53 @@ class text():
         >>>   def effect(self):
         >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
         >>>     customCommand = r'\\newcommand{\\fooBar}{\\textbf{Foo Bar Function! WhooHoo!}}'   # do not forget the r to avoid backslash escape.
-        >>>     inkDraw.text.latex(self, root_layer,r'This is one equation \\begin{align} x=y^2\\end{align} And this is my \\fooBar{}', position=[0.0,0.0], fontSize=10, refPoint='cc', textColor=inkDraw.color.defined('black'), LatexCommands=customCommand, angleDeg=0, preambleFile=None)
+        >>>     inkDraw.text.latex(self, root_layer,r'This is one equation \\begin{align} x=y^2\\end{align} And this is my \\fooBar{}',
+        >>>                        position=[0.0,0.0], fontSize=10, refPoint='cc', textColor=inkDraw.color.defined('black'), LatexCommands=customCommand, angleDeg=0, preambleFile=None)
         """
+        newTmp = True
 
         # write an empty svg file.
 
         if not LaTeXtext:  # check whether text is empty
             return 0
 
-        tempDir=tempfile.gettempdir()
-        tempFilePath = tempDir + '/temp_svg_inkscapeMadeEasy_Draw.txt'   
-        
         if useLatex:  # set useLatex=False to replace latex by an standard text (much faster for debugging =)  )
-          
-            Dump(r'<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- Created with Inkscape (http://www.inkscape.org/) --><svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="744.09448819" height="1052.3622047" id="svg19803" version="1.1" inkscape:version="0.48.3.1 r9886" sodipodi:docname="New document 45"> <defs id="defs19805" /> <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="0.35" inkscape:cx="375" inkscape:cy="520" inkscape:document-units="px" inkscape:current-layer="layer1" showgrid="false" inkscape:window-width="500" inkscape:window-height="445" inkscape:window-x="932" inkscape:window-y="0" inkscape:window-maximized="0" /> <metadata id="metadata19808"> <rdf:RDF> <cc:Work rdf:about=""> <dc:format>image/svg+xml</dc:format> <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /> <dc:title></dc:title> </cc:Work> </rdf:RDF> </metadata> <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" /></svg>',tempFilePath, 'w')
 
+            if newTmp:
+                tmpf = tempfile.NamedTemporaryFile(mode='w', prefix='temp_svg_inkscapeMadeEasy_Draw_', suffix='.svg', delete=False)
+                tempFilePath = tmpf.name
+                tmpf.write(BlankSVG)
+                tmpf.close()
+            else:
+                tempDir = tempfile.gettempdir()
+                tempFilePath = tempDir + '/temp_svg_inkscapeMadeEasy_Draw.txt'
+                Dump(BlankSVG,tempFilePath, 'w')
+
+            # return
             # temp instance for determining font height. Draws a F letter just to find the height of the font
-            if 2 == 1:  # turning off this part of the code.
+            if False:  # turning off this part of the code.
                 texTemp = textext.TexText()  # start textText (awesome extension! =] )
                 texTemp.affect([r'--text=' + 'F', '--scale-factor=1', tempFilePath], output=False)
                 groupLatex = texTemp.current_layer.find('g')
                 BboxMin, BboxMax = ExtensionBaseObj.getBoundingBox(groupLatex)
                 Height0 = BboxMax[1] - BboxMin[1]
 
-            Height0 = 6.76  # running the code above, we get a 'F' with height of 6.76, with scale 1.0 from textext. This will be used to scale the text accordingly to fit user specification 'fontSize'
+            # running the code above, we get a 'F' with height of 6.76, with scale 1.0 from textext. This will be used to scale the text accordingly to fit user specification 'fontSize'
+            Height0 = 6.76
 
             scale = fontSize / Height0
-        
+
             tex = textext.TexText()  # start textText (awesome extension! =] )
             if preambleFile:
-                tex.affect([r'--text=' + LatexCommands + LaTeXtext, '--scale-factor=1', '--preamble-file=' + preambleFile, tempFilePath], output=False)
+                tex.affect([r'--text=' + LatexCommands + LaTeXtext, '--scale-factor=1', '--preamble-file=' + preambleFile, tempFilePath],
+                           output=False)
             else:
-                tex.affect([r'--text=' + LatexCommands + LaTeXtext, '--scale-factor=1', '--preamble-file=' + ExtensionBaseObj.getBasicLatexPackagesFile(), tempFilePath], output=False)
+                tex.affect(
+                    [r'--text=' + LatexCommands + LaTeXtext, '--scale-factor=1', '--preamble-file=' + ExtensionBaseObj.getBasicLatexPackagesFile(),
+                     tempFilePath], output=False)
+
+            if newTmp:
+                os.unlink(tmpf.name)
 
             groupLatex = tex.current_layer.find('g')
 
@@ -1241,32 +1259,34 @@ class text():
             # remove transforms
             del groupLatex.attrib["transform"]
 
-            ExtensionBaseObj.scaleElement(groupLatex, scaleX=scale, scaleY=-scale)     # scale to fit font size
+            ExtensionBaseObj.scaleElement(groupLatex, scaleX=scale, scaleY=-scale)  # scale to fit font size
         else:
             if refPoint[1] == 'l':
-                justification='left'
+                justification = 'left'
 
             if refPoint[1] == 'c':
-                justification='center'
+                justification = 'center'
 
             if refPoint[1] == 'r':
-                justification='right'
-            
-            mytextStyle = textStyle.setSimpleColor(fontSize=fontSize/0.76, justification='left', textColor=textColor)
-            groupLatex = text.write(ExtensionBaseObj, LaTeXtext, [0, 0], parent,textStyle=mytextStyle, fontSize=fontSize/0.76,justification=justification, angleDeg=0.0) # attention! keep angleDeg=0.0 here bc it will be rotated below
+                justification = 'right'
 
+            mytextStyle = textStyle.setSimpleColor(fontSize=fontSize / 0.76, justification='left', textColor=textColor)
+            groupLatex = text.write(ExtensionBaseObj, LaTeXtext, [0, 0], parent, textStyle=mytextStyle, fontSize=fontSize / 0.76,
+                                    justification=justification, angleDeg=0.0)  # attention! keep angleDeg=0.0 here bc it will be rotated below
+
+        parent.append(groupLatex)
 
         BboxMin, BboxMax = ExtensionBaseObj.getBoundingBox(groupLatex)
-        
+
         if useLatex:  # set useLatex=False to replace latex by an standard text (much faster for debugging =)  )
             if refPoint[0] == 't':
-                refPointY = BboxMin[1]     # BboxMin bc inkscape is upside down
+                refPointY = BboxMin[1]  # BboxMin bc inkscape is upside down
 
             if refPoint[0] == 'c':
                 refPointY = (BboxMax[1] + BboxMin[1]) / 2.0
 
             if refPoint[0] == 'b':
-                refPointY = BboxMax[1]     # BboxMax bc inkscape is upside down
+                refPointY = BboxMax[1]  # BboxMax bc inkscape is upside down
 
             if refPoint[1] == 'l':
                 refPointX = BboxMin[0]
@@ -1279,22 +1299,286 @@ class text():
         else:
             refPointX = BboxMin[0]
             if refPoint[0] == 't':
-                refPointY = BboxMin[1]-fontSize     # BboxMin bc inkscape is upside down
+                refPointY = BboxMin[1] - fontSize  # BboxMin bc inkscape is upside down
 
             if refPoint[0] == 'c':
-                refPointY = BboxMin[1]-(fontSize)/2.0     # BboxMin bc inkscape is upside down
+                refPointY = BboxMin[1] - fontSize / 2.0  # BboxMin bc inkscape is upside down
 
             if refPoint[0] == 'b':
-                refPointY = BboxMax[1]     # BboxMax bc inkscape is upside down
+                refPointY = BboxMax[1]  # BboxMax bc inkscape is upside down
 
         ExtensionBaseObj.moveElement(groupLatex, [-refPointX, -refPointY])  # move to origin
         ExtensionBaseObj.moveElement(groupLatex, [position[0], position[1]])
         if angleDeg != 0:
             ExtensionBaseObj.rotateElement(groupLatex, center=[position[0], position[1]], angleDeg=angleDeg)
 
-        y = parent.append(groupLatex)
-
         return groupLatex
+
+
+class cubicBezier():
+    """ This is a class with different methods for drawing cubic bezier lines.
+
+    This class contains only static methods so that you don't have to inherit this in your class
+    """
+    @staticmethod
+    def addNode(NodeList, coord=[0, 0], cPbefore=[-1, 0], cPafter=[1, 0], typeNode='corner', flagAbsCoords=True):
+        """Add a new node to the list of nodes of the cubic bezier line.
+
+        .. warning:: Keep in mind  that Inkscape's y axis is upside down!
+
+        :param NodeList: list of nodes to be appended with the new node.
+        :param coord: list with the coordinates of the node
+        :param cPbefore: list with the coordinates of the control point before the node.
+        :param cPafter: list with the coordinates of the control point after the node. Used only if 'typeNode' is 'smooth' or 'corner'
+        :param typeNode: type of node to be added. See image below
+
+          - ``corner``: Node without smoothness constraint at the node. The bezier curve can have a sharp edge at the node
+          - ``smooth``: Node with smoothness constraint at the node. The bezier curve will be smooth at the node.
+                    If the control points do not form a straight line, then they are modified to form a straight line. See image below
+          -  ``symmetric``: same as ``smooth``, but the control points are forced to be symmetric with respect to the node.
+
+
+        :param flagAbsCoords: indicate absolute or relative coordinates. See section below on how reference system works.
+            .. warning:: All nodes in a given list must be defined in the same reference system (absolute or relative).
+        :type NodeList: list
+        :type coord: list [x,y]
+        :type cPbefore: list [x,y]
+        :type cPafter: list [x,y]
+        :type typeNode: string
+        :type flagAbsCoords: bool
+
+        :returns: None
+        :rtype: -
+
+        **Node Types**
+
+        The image below presents the types of nodes
+
+        .. image:: ../imagesDocs/bezier_nodeTypes.png
+              :width: 500px
+
+
+        Image below present the process of smoothing control nodes not completely aligned when  ``smooth`` is selected.
+
+        .. image:: ../imagesDocs/bezier_smoothProcess.png
+              :width: 500px
+
+        **Absolute and relative coordinate systems**
+
+        cubic bezier curves are composed by segments which are defined by 4 coordinates, two node coordinates and two control points.
+
+        .. image:: ../imagesDocs/bezier_definitions.png
+          :width: 500px
+
+        In absolute coordinate system, all node and control point localizations are specified using the origin as reference.
+        In relative coordinate system, control point localizations are specified using its node as reference, and each node
+        use the previous node as reference (the first node use the origin as reference). See image below.
+
+        .. warning:: Keep in mind  that Inkscape's y axis is upside down!
+
+        .. image:: ../imagesDocs/bezier_references.png
+          :width: 700px
+
+        **Example**
+
+        .. note:: In the following example, the control point before the first node and after the last node are important
+            when the bezier curve must be closed. See method ``draw``
+
+        .. image:: ../imagesDocs/bezier_example.png
+          :width: 400px
+
+        >>>     # create a list of nodes using absolute coordinate system
+        >>>     nodeListABS=[]
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[4,4], cPbefore=[6,6], cPafter=[2,6], typeNode='corner', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[8,12], cPbefore=[4,12], cPafter=[10,12], typeNode='smooth', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[12,8], cPbefore=[8,8], cPafter=[12,10], typeNode='corner', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[16,8], cPbefore=[14,10], cPafter=None, typeNode='symmetric', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[12,4], cPbefore=[16,4], cPafter=[10,6], typeNode='corner', flagAbsCoords=True)
+
+        >>>     # create a list of nodes using relative coordinate system
+        >>>     nodeListREL=[]
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, 4], cPbefore=[2,2], cPafter=[-2,2], typeNode='corner', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, 8], cPbefore=[-4,0], cPafter=[2,0], typeNode='smooth', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, -4], cPbefore=[-4,0], cPafter=[0,2], typeNode='corner', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, 0], cPbefore=[-2,2], cPafter=None, typeNode='symmetric', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[-4,-4], cPbefore=[4,0], cPafter=[-2,2], typeNode='corner', flagAbsCoords=False)
+
+        """
+
+        if typeNode.lower() == 'symmetric':
+            typeNodeSodipodi = 'z'
+
+        if typeNode.lower() == 'smooth':
+            typeNodeSodipodi = 's'
+
+        if typeNode.lower() == 'corner':
+            typeNodeSodipodi = 'c'
+
+        if typeNodeSodipodi.lower() == 'c':  # corner
+            NodeList.append({'node': coord, 'cPoint_before': cPbefore, 'cPoint_after': cPafter, 'type': typeNodeSodipodi, 'absCoords': flagAbsCoords})
+
+        if typeNodeSodipodi.lower() == 'z':  # symmetric
+            if flagAbsCoords:
+                deltaX = coord[0] - cPbefore[0]
+                deltaY = coord[1] - cPbefore[1]
+                NodeList.append({'node': coord, 'cPoint_before': cPbefore, 'cPoint_after': [coord[0] + deltaX, coord[1] + deltaY], 'type': typeNodeSodipodi, 'absCoords': flagAbsCoords})
+            else:
+                NodeList.append({'node': coord, 'cPoint_before': cPbefore, 'cPoint_after': [-cPbefore[0],-cPbefore[1]], 'type': typeNodeSodipodi, 'absCoords': flagAbsCoords})
+
+        if typeNodeSodipodi.lower() == 's':  # smooth
+
+            # projects the directions of the control points to a commom direction, perpendicular to both
+            delta1 = np.array(cPbefore)
+            delta2 = np.array(cPafter)
+
+            if abs(delta1.dot(delta2)) <1.0:
+
+                if flagAbsCoords:
+                    delta1 -= np.array(coord)
+                    delta2 -= np.array(coord)
+
+                # https://math.stackexchange.com/questions/2285965/how-to-find-the-vector-formula-for-the-bisector-of-given-two-vectors
+                bisectorVector = np.linalg.norm(delta2) * delta1 + np.linalg.norm(delta1) * delta2
+                tangentVersor = np.array([-bisectorVector[1], bisectorVector[0]])
+                tangentVersor /= np.linalg.norm(tangentVersor)
+
+                cPbeforeNew = np.linalg.norm(delta1) * tangentVersor
+                cPafterNew = np.linalg.norm(delta2) * tangentVersor
+
+                if flagAbsCoords:
+                    cPbeforeNew += np.array(coord)
+                    cPafterNew += np.array(coord)
+
+                NodeList.append({'node': coord, 'cPoint_before': cPbeforeNew.tolist(), 'cPoint_after': cPafterNew.tolist(), 'type': typeNodeSodipodi, 'absCoords': flagAbsCoords})
+            else:
+                NodeList.append({'node': coord, 'cPoint_before': cPbefore, 'cPoint_after': cPafter, 'type': typeNodeSodipodi, 'absCoords': flagAbsCoords})
+
+
+
+    @staticmethod
+    def draw(parent, NodeList, offset=np.array([0, 0]), label='none', lineStyle=lineStyle.setSimpleBlack(), closePath=False):
+        """draws the bezier line, given a list of nodes, built using ``addNode`` method
+
+
+        :param parent: parent object
+        :param NodeList: list of nodes. See ``addNode`` method
+        :param offset: offset coords. Default [0,0]
+        :param label: label of the line. Default 'none'
+        :param lineStyle: line style to be used. See class ``lineStyle``. Default: lineStyle=lineStyle.setSimpleBlack()
+        :param closePath: Connects the first point to the last. Default: False
+
+        :type parent: inkscapeMadeEasy object (see example below)
+        :type NodeList: list of nodes
+        :type offset: list
+        :type label: string
+        :type lineStyle: lineStyle object
+        :type closePath: bool
+
+        :returns: the new line object
+        :rtype: line Object
+
+        **Example**
+
+        .. note:: In the following example, the control point before the first node and after the last node are important
+            when the bezier curve must be closed.
+
+        .. image:: ../imagesDocs/bezier_example.png
+          :width: 400px
+
+        >>> import inkex
+        >>> import inkscapeMadeEasy_Base as inkBase
+        >>> import inkscapeMadeEasy_Draw as inkDraw
+        >>>
+        >>> class myExtension(inkBase.inkscapeMadeEasy):
+        >>>   def __init__(self):
+        >>>     ...
+        >>>     ...
+        >>>
+        >>>   def effect(self):
+        >>>     root_layer = self.document.getroot()     # retrieves the root layer of the document
+        >>>     myLineStyle = set(lineWidth=1.0, lineColor=color.defined('red'))
+
+        >>>     # create a list of nodes using absolute coordinate system
+        >>>     nodeListABS=[]
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[4,4], cPbefore=[6,6], cPafter=[2,6], typeNode='corner', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[8,12], cPbefore=[4,12], cPafter=[10,12], typeNode='smooth', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[12,8], cPbefore=[8,8], cPafter=[12,10], typeNode='corner', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[16,8], cPbefore=[14,10], cPafter=None, typeNode='symmetric', flagAbsCoords=True)
+        >>>     inkDraw.cubicBezier.addNode(nodeListABS, coord=[12,4], cPbefore=[16,4], cPafter=[10,6], typeNode='corner', flagAbsCoords=True)
+
+        >>>     # create a list of nodes using relative coordinate system
+        >>>     nodeListREL=[]
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, 4], cPbefore=[2,2], cPafter=[-2,2], typeNode='corner', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, 8], cPbefore=[-4,0], cPafter=[2,0], typeNode='smooth', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, -4], cPbefore=[-4,0], cPafter=[0,2], typeNode='corner', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[4, 0], cPbefore=[-2,2], cPafter=None, typeNode='symmetric', flagAbsCoords=False)
+        >>>     inkDraw.cubicBezier.addNode(nodeListREL, coord=[-4,-4], cPbefore=[4,0], cPafter=[-2,2], typeNode='corner', flagAbsCoords=False)
+
+        >>>     C1 = inkDraw.cubicBezier.draw(root_layer,nodeListABS, offset=[0, 0],closePath=False)
+        >>>     C2 = inkDraw.cubicBezier.draw(root_layer,nodeListABS, offset=[0, 0],closePath=True)
+        >>>     C3 = inkDraw.cubicBezier.draw(root_layer,nodeListREL, offset=[0, 0],closePath=False)
+        >>>     C4 = inkDraw.cubicBezier.draw(root_layer,nodeListREL, offset=[0, 0],closePath=True)
+
+        Result of the example
+
+        .. image:: ../imagesDocs/bezier_example_draw.png
+          :width: 800px
+
+        """
+
+        # first node
+        if NodeList[0]['absCoords']:
+            string_coords = 'M %f,%f ' % (NodeList[0]['node'][0] + offset[0], NodeList[0]['node'][0] + offset[1])
+        else:
+            string_coords = 'M %f,%f ' % (NodeList[0]['node'][0] + offset[0], NodeList[0]['node'][0] + offset[1])
+
+        string_nodeTypes = ''
+        Ptotal=np.zeros(2)
+        for i in range(len(NodeList) - 1):
+            currNode = NodeList[i]
+            nextNode = NodeList[i + 1]
+
+            if currNode['absCoords']:
+                bezier = 'C %f,%f ' % (currNode['cPoint_after'][0] + offset[0], currNode['cPoint_after'][1] + offset[1])  # first control point
+                bezier += '%f,%f ' % (nextNode['cPoint_before'][0] + offset[0], nextNode['cPoint_before'][1] + offset[1])  # second control point
+                bezier += '%f,%f ' % (nextNode['node'][0] + offset[0], nextNode['node'][1] + offset[1])  # second node
+            else:
+                bezier = 'c %f,%f ' % (currNode['cPoint_after'][0], currNode['cPoint_after'][1])  # first control point
+                bezier += '%f,%f ' % (nextNode['cPoint_before'][0] + nextNode['node'][0], nextNode['cPoint_before'][1] + nextNode['node'][1])  # second control point
+                bezier += '%f,%f ' % (nextNode['node'][0], nextNode['node'][1])  # second node
+                Ptotal +=np.array(currNode['node'])
+
+            string_nodeTypes += currNode['type']
+            string_coords = string_coords + bezier
+
+        if closePath:
+            currNode = NodeList[-1]
+            nextNode = copy.deepcopy(NodeList[0])
+
+            if currNode['absCoords']:
+                bezier = 'C %f,%f ' % (currNode['cPoint_after'][0] + offset[0], currNode['cPoint_after'][1] + offset[1])  # first control point
+                bezier += '%f,%f ' % (nextNode['cPoint_before'][0] + offset[0], nextNode['cPoint_before'][1] + offset[1])  # second control point
+                bezier += '%f,%f ' % (nextNode['node'][0] + offset[0], nextNode['node'][1] + offset[1])  # second node
+            else:
+                # writes the coordinates of the first node, relative to the last node.
+                Ptotal +=np.array(currNode['node'])
+                nextNode['node'][0] = NodeList[0]['node'][0] - Ptotal[0]
+                nextNode['node'][1] = NodeList[0]['node'][1] - Ptotal[1]
+
+                bezier = 'c %f,%f ' % (currNode['cPoint_after'][0], currNode['cPoint_after'][1])  # first control point
+                bezier += '%f,%f ' % (nextNode['cPoint_before'][0] + nextNode['node'][0], nextNode['cPoint_before'][1] + nextNode['node'][1])  # second control point
+                bezier += '%f,%f ' % (nextNode['node'][0], nextNode['node'][1])  # second node
+
+            string_nodeTypes += currNode['type'] + nextNode['type']
+            string_coords = string_coords + bezier + ' Z'
+        else:
+            string_nodeTypes += currNode['type']
+
+        # M = move, L = line, H = horizontal line, V = vertical line, C = curve, S = smooth curve,
+        # Q = quadratic Bezier curve, T = smooth quadratic Bezier curve, A = elliptical Arc,Z = closepath
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle), 'd': string_coords, inkex.addNS('nodetypes', 'sodipodi'): string_nodeTypes}
+
+        return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
 
 
 class line():
@@ -1302,8 +1586,9 @@ class line():
 
     This class contains only static methods so that you don't have to inherit this in your class
     """
+
     @staticmethod
-    def absCoords(parent, coordsList, offset=[0, 0], label='none', lineStyle=lineStyle.setSimpleBlack()):
+    def absCoords(parent, coordsList, offset=[0, 0], label='none', lineStyle=lineStyle.setSimpleBlack(), closePath=False):
         """Draws a (poly)line based on a list of absolute coordinates
 
         .. warning:: Keep in mind  that Inkscape's y axis is upside down!
@@ -1313,12 +1598,14 @@ class line():
         :param offset: offset coords. Default [0,0]
         :param label: label of the line. Default 'none'
         :param lineStyle: line style to be used. See class ``lineStyle``. Default: lineStyle=lineStyle.setSimpleBlack()
+        :param closePath: Connects the first point to the last. Default: False
 
         :type parent: inkscapeMadeEasy object (see example below)
         :type coordsList: list of list
         :type offset: list
         :type label: string
         :type lineStyle: lineStyle object
+        :type closePath: bool
 
         :returns: the new line object
         :rtype: line Object
@@ -1354,18 +1641,20 @@ class line():
         string_coords = ''
 
         for point in coordsList:
-            string_coords = string_coords + ' ' + str(point[0] + offset[0]) + ' ' + str(point[1] + offset[1])
+            string_coords = string_coords + ' ' + str(point[0] + offset[0]) + ',' + str(point[1] + offset[1])
 
-        Attribs = {inkex.addNS('label', 'inkscape'): label,
-                   'style': simplestyle.formatStyle(lineStyle),
-                   # M = move, L = line, H = horizontal line, V = vertical line, C = curve, S = smooth curve, Q = quadratic Bezier curve, T = smooth quadratic Bezier curve, A = elliptical Arc,Z = closepath
-                   'd': 'M ' + string_coords}
+        if closePath:
+            string_coords += ' Z'
+
+        # M = move, L = line, H = horizontal line, V = vertical line, C = curve, S = smooth curve,
+        # Q = quadratic Bezier curve, T = smooth quadratic Bezier curve, A = elliptical Arc,Z = closepath
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle), 'd': 'M ' + string_coords}
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
-    def relCoords(parent, coordsList, offset=[0, 0], label='none', lineStyle=lineStyle.setSimpleBlack()):
+    def relCoords(parent, coordsList, offset=[0, 0], label='none', lineStyle=lineStyle.setSimpleBlack(), closePath=False):
         """Draws a (poly)line based on a list of relative coordinates
 
         .. warning:: Keep in mind  that Inkscape's y axis is upside down!
@@ -1375,12 +1664,14 @@ class line():
         :param offset: offset coords. Default [0,0]
         :param label: label of the line. Default 'none'
         :param lineStyle: line style to be used. See class ``lineStyle``. Default: lineStyle=lineStyle.setSimpleBlack()
+        :param closePath: Connects the first point to the last. Default: False
 
         :type parent: inkscapeMadeEasy object (see example below)
         :type coordsList: list of list
         :type offset: list
         :type label: string
         :type lineStyle: lineStyle object
+        :type closePath: bool
 
         :returns: the new line object
         :rtype: line Object
@@ -1415,11 +1706,14 @@ class line():
         # string with coordinates
         string_coords = ''
         for dist in coordsList:
-            string_coords = string_coords + ' ' + str(dist[0]) + ' ' + str(dist[1])
+            string_coords = string_coords + ' ' + str(dist[0]) + ',' + str(dist[1])
 
-        Attribs = {inkex.addNS('label', 'inkscape'): label,
-                   'style': simplestyle.formatStyle(lineStyle),
-                   # M = move, L = line, H = horizontal line, V = vertical line, C = curve, S = smooth curve, Q = quadratic Bezier curve, T = smooth quadratic Bezier curve, A = elliptical Arc,Z = closepath
+        if closePath:
+            string_coords += ' Z'
+
+        # M = move, L = line, H = horizontal line, V = vertical line, C = curve, S = smooth curve,
+        # Q = quadratic Bezier curve, T = smooth quadratic Bezier curve, A = elliptical Arc,Z = closepath
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle),
                    'd': 'm ' + str(offset[0]) + ' ' + str(offset[1]) + string_coords}
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
@@ -1430,8 +1724,10 @@ class arc():
 
     This class contains only static methods so that you don't have to inherit this in your class
     """
+
     @staticmethod
-    def startEndRadius(parent, Pstart, Pend, radius, offset=[0, 0], label='arc',  lineStyle=lineStyle.setSimpleBlack(), flagRightOf=True, flagOpen=True, largeArc=False):
+    def startEndRadius(parent, Pstart, Pend, radius, offset=[0, 0], label='arc', lineStyle=lineStyle.setSimpleBlack(), flagRightOf=True,
+                       flagOpen=True, largeArc=False):
         """Draws a circle arc from ``Pstart`` to ``Pend`` with a given radius
 
         .. image:: ../imagesDocs/arc_startEndRadius.png
@@ -1513,7 +1809,7 @@ class arc():
         DistVector = EndVector - StartVector
         Dist = np.linalg.norm(DistVector)  # distance between start and end
         if Dist > 2.0 * radius:
-            exit
+            return None
 
         if (flagRightOf and largeArc) or (not flagRightOf and not largeArc):
             RadiusDirection = np.array([-DistVector[1], DistVector[0]])  # perpendicular to DistVector
@@ -1521,7 +1817,7 @@ class arc():
             RadiusDirection = np.array([DistVector[1], -DistVector[0]])  # perpendicular to DistVector
 
         RadiusDirection = RadiusDirection / np.linalg.norm(RadiusDirection)  # normalize RadiusDirection
-        CenterPoint = StartVector + DistVector / 2.0 + RadiusDirection * math.sqrt(radius**2.0 - (Dist / 2.0)**2.0)
+        CenterPoint = StartVector + DistVector / 2.0 + RadiusDirection * math.sqrt(radius ** 2.0 - (Dist / 2.0) ** 2.0)
 
         # computes the starting angle and ending angle
         temp = StartVector - CenterPoint
@@ -1529,7 +1825,7 @@ class arc():
         temp = EndVector - CenterPoint
         AngEnd = math.atan2(temp[1], temp[0])
 
-        if flagRightOf:   # inkscape does not follow svg path format to create arcs. It uses sodipodi which is weird  =S
+        if flagRightOf:  # inkscape does not follow svg path format to create arcs. It uses sodipodi which is weird  =S
             sodipodiAngleStart = str(AngEnd)
             sodipodiAngleEnd = str(AngStart)
         else:
@@ -1546,28 +1842,24 @@ class arc():
         else:
             sweepFlag = 1
         arcString = ' a %f,%f 0 %d %d %f,%f' % (radius, radius, largeArcFlag, sweepFlag, EndVector[0] - StartVector[0], EndVector[1] - StartVector[1])
-        if flagOpen == False:  # option to close arc
+        if not flagOpen:  # option to close arc
             arcString = arcString + ' L ' + str(CenterPoint[0] + offset[0]) + ' ' + str(CenterPoint[1] + offset[1]) + ' z'
 
-        Attribs = {inkex.addNS('label', 'inkscape'): label,
-                   'style': simplestyle.formatStyle(lineStyle),
-                   inkex.addNS('type', 'sodipodi'): 'arc',
-                   inkex.addNS('rx', 'sodipodi'): str(radius),
-                   inkex.addNS('ry', 'sodipodi'): str(radius),
-                   inkex.addNS('cx', 'sodipodi'): str(CenterPoint[0] + offset[0]),
-                   inkex.addNS('cy', 'sodipodi'): str(CenterPoint[1] + offset[1]),
-                   inkex.addNS('start', 'sodipodi'): sodipodiAngleStart,
-                   inkex.addNS('end', 'sodipodi'): sodipodiAngleEnd,
-                   # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
+        # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle), inkex.addNS('type', 'sodipodi'): 'arc',
+                   inkex.addNS('rx', 'sodipodi'): str(radius), inkex.addNS('ry', 'sodipodi'): str(radius),
+                   inkex.addNS('cx', 'sodipodi'): str(CenterPoint[0] + offset[0]), inkex.addNS('cy', 'sodipodi'): str(CenterPoint[1] + offset[1]),
+                   inkex.addNS('start', 'sodipodi'): sodipodiAngleStart, inkex.addNS('end', 'sodipodi'): sodipodiAngleEnd,
                    'd': 'M ' + str(offset[0] + StartVector[0]) + ' ' + str(offset[1] + StartVector[1]) + arcString}
         if flagOpen:
             Attribs[inkex.addNS('open', 'sodipodi')] = 'true'
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
 
-    #---------------------------------------------
+    # ---------------------------------------------
     @staticmethod
-    def centerAngStartAngEnd(parent, centerPoint, radius, angStart, angEnd, offset=[0, 0], label='arc', lineStyle=lineStyle.setSimpleBlack(), flagOpen=True, largeArc=False):
+    def centerAngStartAngEnd(parent, centerPoint, radius, angStart, angEnd, offset=[0, 0], label='arc', lineStyle=lineStyle.setSimpleBlack(),
+                             flagOpen=True, largeArc=False):
         """Draws a circle arc given its center and start and end angles
 
         .. image:: ../imagesDocs/arc_centerAngStartAngEnd.png
@@ -1624,9 +1916,11 @@ class arc():
         >>>     myLineStyle=inkDraw.lineStyle.setSimpleBlack()
         >>>     
         >>>     #draws the shortest arc
-        >>>     inkDraw.arc.centerAngStartAngEnd(parent=root_layer, centerPoint=[0,0], radius=15.0, angStart=-10, angEnd=90, offset=[0,0], label='arc1',  lineStyle=myLineStyle, flagOpen=True,largeArc=False)
+        >>>     inkDraw.arc.centerAngStartAngEnd(parent=root_layer, centerPoint=[0,0], radius=15.0, angStart=-10, angEnd=90,
+        >>>                                      offset=[0,0], label='arc1',  lineStyle=myLineStyle, flagOpen=True,largeArc=False)
         >>>     #draws the longest arc
-        >>>     inkDraw.arc.centerAngStartAngEnd(parent=root_layer, centerPoint=[0,0], radius=15.0, angStart=-10, angEnd=90, offset=[30,0], label='arc1',  lineStyle=myLineStyle, flagOpen=True,largeArc=True)
+        >>>     inkDraw.arc.centerAngStartAngEnd(parent=root_layer, centerPoint=[0,0], radius=15.0, angStart=-10, angEnd=90,
+        >>>                                      offset=[30,0], label='arc1',  lineStyle=myLineStyle, flagOpen=True,largeArc=True)
         """
 
         Pstart = [radius * math.cos(math.radians(angStart)), radius * math.sin(math.radians(angStart))]
@@ -1647,6 +1941,7 @@ class circle():
 
     This class contains only static methods so that you don't have to inherit this in your class
     """
+
     @staticmethod
     def centerRadius(parent, centerPoint, radius, offset=[0, 0], label='circle', lineStyle=lineStyle.setSimpleBlack()):
         """draws a circle given its center point and radius
@@ -1693,27 +1988,26 @@ class circle():
         arcStringA = ' a %f,%f 0 1 1 %f,%f' % (radius, radius, -2 * radius, 0)
         arcStringB = ' a %f,%f 0 1 1 %f,%f' % (radius, radius, 2 * radius, 0)
 
-        Attribs = {inkex.addNS('label', 'inkscape'): label,
-                   'style': simplestyle.formatStyle(lineStyle),
-                   inkex.addNS('type', 'sodipodi'): 'arc',
-                   inkex.addNS('rx', 'sodipodi'): str(radius),
-                   inkex.addNS('ry', 'sodipodi'): str(radius),
-                   inkex.addNS('cx', 'sodipodi'): str(centerPoint[0] + offset[0]),
-                   inkex.addNS('cy', 'sodipodi'): str(centerPoint[1] + offset[1]),
-                   inkex.addNS('start', 'sodipodi'): '0',
-                   inkex.addNS('end', 'sodipodi'): str(2 * math.pi),
-                   # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
-                   'd': 'M ' + str(centerPoint[0] + offset[0] + radius) + ' ' + str(centerPoint[1] + offset[1]) + arcStringA + ' ' + arcStringB + ' z'}
+        # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle), inkex.addNS('type', 'sodipodi'): 'arc',
+                   inkex.addNS('rx', 'sodipodi'): str(radius), inkex.addNS('ry', 'sodipodi'): str(radius),
+                   inkex.addNS('cx', 'sodipodi'): str(centerPoint[0] + offset[0]), inkex.addNS('cy', 'sodipodi'): str(centerPoint[1] + offset[1]),
+                   inkex.addNS('start', 'sodipodi'): '0', inkex.addNS('end', 'sodipodi'): str(2 * math.pi),
+                   'd': 'M ' + str(centerPoint[0] + offset[0] + radius) + ' ' + str(
+                       centerPoint[1] + offset[1]) + arcStringA + ' ' + arcStringB + ' z'}
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
+
 
 class rectangle():
     """ This is a class with different methods for drawing rectangles.
 
     This class contains only static methods so that you don't have to inherit this in your class
     """
+
     @staticmethod
-    def widthHeightCenter(parent, centerPoint, width, height,radiusX=None,radiusY=None, offset=[0, 0], label='rectangle', lineStyle=lineStyle.setSimpleBlack()):
+    def widthHeightCenter(parent, centerPoint, width, height, radiusX=None, radiusY=None, offset=[0, 0], label='rectangle',
+                          lineStyle=lineStyle.setSimpleBlack()):
         """draws a rectangle given its center point and dimensions
 
         .. warning:: Keep in mind  that Inkscape's y axis is upside down!
@@ -1723,7 +2017,7 @@ class rectangle():
         :param width: dimension in X direction
         :param height: dimension in Y direction
         :param radiusX: rounding radius in X direction. If this value is ``None``, the rectangle will have sharp corners. Default: None
-        :param radiusY: rounding radius in Y direction. If this value is ``None``, then radiusX will also be used in Y direction. If radiusX is also ``None``, then the rectangle will have sharp corners. Default: None
+        :param radiusY: rounding radius in Y direction. If this value is ``None``, then radiusX will also be used in Y direction. If radiusX is also ``None``,then the rectangle will have sharp corners. Default: None
         :param offset: extra offset coords [x,y]
         :param label: label of the line. Default 'circle'
         :param lineStyle: line style to be used. See class ``lineStyle``. Default: lineStyle=lineStyle.setSimpleBlack()
@@ -1759,30 +2053,24 @@ class rectangle():
         >>>     #draws a 50x60 rectangle with radiusX=2.0 and radiusY=3.0
         >>>     inkDraw.rectangle.widthHeightCenter(parent=root_layer, centerPoint=[0,0], width=50, height=60, radiusX=2.0,radiusY=3.0, offset=[0,0], label='rect1',  lineStyle=myLineStyle)
         """
-        x= centerPoint[0]-width/2.0 + offset[0]
-        y= centerPoint[1]-height/2.0 + offset[1]
-        
-        Attribs = {inkex.addNS('label', 'inkscape'): label,
-                      'style': simplestyle.formatStyle(lineStyle),
-                      'width': str(width),
-                      'height': str(height),
-                      'x': str(x),
-                      'y': str(y),
-                      'rx': str(radiusX),
-                      'ry': str(radiusY)}
-        
-        if radiusX and radiusX>0.0:
-          Attribs['rx'] = str(radiusX)
-          if radiusY == None:
-            Attribs['ry'] = str(radiusX)
-          else:
-            if radiusY > 0.0:
-              Attribs['ry'] = str(radiusY)
+        x = centerPoint[0] - width / 2.0 + offset[0]
+        y = centerPoint[1] - height / 2.0 + offset[1]
+
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle), 'width': str(width), 'height': str(height),
+                   'x': str(x), 'y': str(y), 'rx': str(radiusX), 'ry': str(radiusY)}
+
+        if radiusX and radiusX > 0.0:
+            Attribs['rx'] = str(radiusX)
+            if radiusY is None:
+                Attribs['ry'] = str(radiusX)
+            else:
+                if radiusY > 0.0:
+                    Attribs['ry'] = str(radiusY)
 
         return inkex.etree.SubElement(parent, inkex.addNS('rect', 'svg'), Attribs)
 
     @staticmethod
-    def corners(parent, corner1, corner2, radiusX=None,radiusY=None, offset=[0, 0], label='rectangle', lineStyle=lineStyle.setSimpleBlack()):
+    def corners(parent, corner1, corner2, radiusX=None, radiusY=None, offset=[0, 0], label='rectangle', lineStyle=lineStyle.setSimpleBlack()):
         """draws a rectangle given the coordinates of two oposite corners
 
         .. warning:: Keep in mind  that Inkscape's y axis is upside down!
@@ -1826,19 +2114,21 @@ class rectangle():
         >>>     #draws a rectangle with corners C1=[1,5] and C2=[6,10], with radiusX=2.0 and radiusY=3.0
         >>>     inkDraw.rectangle.corners(parent=root_layer, corner1=[1,5], corner2=[6,10], radiusX=2.0,radiusY=3.0, offset=[0,0], label='rect1',  lineStyle=myLineStyle)
         """
-        x= (corner1[0]+corner2[0])/2.0
-        y= (corner1[1]+corner2[1])/2.0
-        
-        width = abs(corner1[0]-corner2[0])
-        height = abs(corner1[1]-corner2[1])
+        x = (corner1[0] + corner2[0]) / 2.0
+        y = (corner1[1] + corner2[1]) / 2.0
 
-        return rectangle.widthHeightCenter(parent, [x,y], width, height, radiusX, radiusY, offset, label, lineStyle)    
-     
+        width = abs(corner1[0] - corner2[0])
+        height = abs(corner1[1] - corner2[1])
+
+        return rectangle.widthHeightCenter(parent, [x, y], width, height, radiusX, radiusY, offset, label, lineStyle)
+
+
 class ellipse():
     """ This is a class with different methods for drawing ellipses.
 
     This class contains only static methods so that you don't have to inherit this in your class
     """
+
     @staticmethod
     def centerRadius(parent, centerPoint, radiusX, radiusY, offset=[0, 0], label='circle', lineStyle=lineStyle.setSimpleBlack()):
         """draws an ellipse given its center point and radius
@@ -1887,16 +2177,59 @@ class ellipse():
         arcStringA = ' a %f,%f 0 1 1 %f,%f' % (radiusX, radiusY, -2 * radiusX, 0)
         arcStringB = ' a %f,%f 0 1 1 %f,%f' % (radiusX, radiusY, 2 * radiusX, 0)
 
-        Attribs = {inkex.addNS('label', 'inkscape'): label,
-                   'style': simplestyle.formatStyle(lineStyle),
-                   inkex.addNS('type', 'sodipodi'): 'arc',
-                   inkex.addNS('rx', 'sodipodi'): str(radiusX),
-                   inkex.addNS('ry', 'sodipodi'): str(radiusY),
-                   inkex.addNS('cx', 'sodipodi'): str(centerPoint[0] + offset[0]),
-                   inkex.addNS('cy', 'sodipodi'): str(centerPoint[1] + offset[1]),
-                   inkex.addNS('start', 'sodipodi'): '0',
-                   inkex.addNS('end', 'sodipodi'): str(2 * math.pi),
-                   # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
-                   'd': 'M ' + str(centerPoint[0] + offset[0] + radiusX) + ' ' + str(centerPoint[1] + offset[1]) + arcStringA + ' ' + arcStringB + ' z'}
+        # M = moveto,L = lineto,H = horizontal lineto,V = vertical lineto,C = curveto,S = smooth curveto,Q = quadratic Bezier curve,T = smooth quadratic Bezier curveto,A = elliptical Arc,Z = closepath
+        Attribs = {inkex.addNS('label', 'inkscape'): label, 'style': simplestyle.formatStyle(lineStyle), inkex.addNS('type', 'sodipodi'): 'arc',
+                   inkex.addNS('rx', 'sodipodi'): str(radiusX), inkex.addNS('ry', 'sodipodi'): str(radiusY),
+                   inkex.addNS('cx', 'sodipodi'): str(centerPoint[0] + offset[0]), inkex.addNS('cy', 'sodipodi'): str(centerPoint[1] + offset[1]),
+                   inkex.addNS('start', 'sodipodi'): '0', inkex.addNS('end', 'sodipodi'): str(2 * math.pi),
+                   'd': 'M ' + str(centerPoint[0] + offset[0] + radiusX) + ' ' + str(
+                       centerPoint[1] + offset[1]) + arcStringA + ' ' + arcStringB + ' z'}
 
         return inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), Attribs)
+
+
+BlankSVG = r"""<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:cc="http://creativecommons.org/ns#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="744.09448819"
+     height="1052.3622047"
+     id="svg19803"
+     version="1.1"
+     inkscape:version="0.48.3.1 r9886"
+     sodipodi:docname="New document 45">
+    <defs id="defs19805"/>
+    <sodipodi:namedview id="base"
+                        pagecolor="#ffffff"
+                        bordercolor="#666666"
+                        borderopacity="1.0"
+                        inkscape:pageopacity="0.0"
+                        inkscape:pageshadow="2"
+                        inkscape:zoom="0.35"
+                        inkscape:cx="375"
+                        inkscape:cy="520"
+                        inkscape:document-units="px"
+                        inkscape:current-layer="layer1"
+                        showgrid="false"
+                        inkscape:window-width="500"
+                        inkscape:window-height="445"
+                        inkscape:window-x="932"
+                        inkscape:window-y="0"
+                        inkscape:window-maximized="0"/>
+    <metadata id="metadata19808">
+        <rdf:RDF>
+            <cc:Work rdf:about="">
+                <dc:format>image/svg+xml</dc:format>
+                <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+                <dc:title></dc:title>
+            </cc:Work>
+        </rdf:RDF>
+    </metadata>
+    <g inkscape:label="Layer 1"
+       inkscape:groupmode="layer"
+       id="layer1"/>
+</svg>
+"""
